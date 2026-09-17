@@ -1,0 +1,7 @@
+https://leanprover-community.github.io/install/project.html
+https://github.com/LeanMachineLearning/LML
+https://github.com/ShangtongZhang/rl-theory-in-lean
+https://github.com/YuanheZ/lean-stat-learning-theory
+https://github.com/Robby955/FormalSLT
+https://github.com/IBM/FormalML
+https://github.com/leanprover-community/mathlib4

@@ -1,0 +1,41 @@
+import Mathlib
+open MeasureTheory ProbabilityTheory
+open scoped ENNReal
+
+#check @Measure.prod_apply
+#check @Measure.prod_apply_symm
+#check @withDensity_apply
+#check @lintegral_withDensity_eq_lintegral_mul
+#check @lintegral_prod
+#check @lintegral_prod_symm
+#check @lintegral_lintegral_swap
+#check @lintegral_indicator
+#check @lintegral_const_mul
+#check @lintegral_map
+#check @Real.map_volume_mul_left
+#check @Real.smul_map_volume_mul_left
+#check @Measure.prod_withDensity
+#check @Measure.withDensity_prod
+#check @Real.integral_rpow_mul_exp_neg_mul_Ioi
+#check @integral_eq_lintegral_of_nonneg_ae
+#check @setLIntegral_congr_fun
+#check @Measure.restrict_map
+#check @Measure.map_apply
+#check @Measurable.ennreal_ofReal
+#check @ENNReal.ofReal_mul
+#check @ENNReal.toReal_ofReal
+#check @Real.rpow_add
+#check @Real.mul_rpow
+#check @Real.rpow_mul
+#check @Real.rpow_neg
+#check @Real.inv_rpow
+#check @Real.rpow_natCast
+#check @Real.exp_add
+#check @Real.exp_neg
+#check @Real.rpow_one
+#check @Real.one_rpow
+#check @Real.rpow_zero
+#check @Real.rpow_pos_of_pos
+#check @Real.rpow_nonneg
+#check @Real.rpow_le_rpow
+#check @Real.rpow_eq_zero

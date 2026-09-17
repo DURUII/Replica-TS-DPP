@@ -1,0 +1,17 @@
+# Lean 构建产物（.lake 里是 vendored mathlib + olean，7.5 GB）
+lean4/.lake/
+
+# pages/ 是 paper.pdf 的整页渲染（p01–p10）加若干公式截图，7.8 MB 二进制。
+# 不提交的理由：没有任何 .md 引用它们（只有 code/src/*.py 引用），整页渲染从已提交的
+# paper.pdf 可复现，公式截图从原文可复现。二进制进 git 不可审查、不可 diff。
+pages/
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# npx / chrome-devtools-mcp 的本地缓存
+.npm-cache-local/

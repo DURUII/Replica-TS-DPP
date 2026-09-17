@@ -213,3 +213,31 @@ import TSDPP
 #print axioms TSDPP.betaMeasure_Iio_chernoff'
 #print axioms TSDPP.betaMeasure_prod_abs_sub_le_small'
 #print axioms TSDPP.betaMeasure_prod_abs_sub_le_unionTail'
+
+-- ---------------------------------------------------------------------------------------------
+-- THE REFUTATION — `TSDPP/Lemma5Refutation.lean` and its analytic input `TSDPP/BetaOneCDF.lean`
+-- ---------------------------------------------------------------------------------------------
+--
+-- These eleven declarations are the *deliverable* under `CLAUDE.md` item 1's "完整证明**或反证**".
+-- The registered Lemma 5 target is false on `r ≥ 1`, and unlike the `BetaConcentration.lean` block
+-- above — which audits a *reduction* to the undischarged `hnum` — these are unconditional: no
+-- hypotheses, no residual, no open sub-node.  `lemma5_as_registered_is_false` and
+-- `paper_lemma5_range_ge_one_is_false` are the two instances that matter (the artifact's `11/100`
+-- and the paper's own `1/8`).
+--
+-- **SCOPE, and it is not a formality.**  What is refuted is the `r ≥ 1` statement — the one this
+-- artifact registered.  The paper states its Lemma 5 for `0 ≤ r ≤ 1` (`paper.pdf` p. 9 Eq (31)),
+-- and the witness sits at `r = 14`, outside that range, so the paper's own Lemma 5 is NOT refuted
+-- here; nor is the paper's theorem, since a proof step that does not go through does not make a
+-- theorem false.  See the header of `TSDPP/Lemma5Refutation.lean` and `cards/L5-REFUTATION.md` §0.
+#print axioms TSDPP.pow_100_101_le
+#print axioms TSDPP.exp_neg_le_pow_86_101
+#print axioms TSDPP.arith_core
+#print axioms TSDPP.refute_arith
+#print axioms TSDPP.prod_Ici_prod_Iic_le_abs_sub
+#print axioms TSDPP.betaMeasure_one_Ioo
+#print axioms TSDPP.betaMeasure_one_Ici
+#print axioms TSDPP.betaMeasure_one_Iic
+#print axioms TSDPP.lemma5_range_ge_one_is_false
+#print axioms TSDPP.lemma5_as_registered_is_false
+#print axioms TSDPP.paper_lemma5_range_ge_one_is_false

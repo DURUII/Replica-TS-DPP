@@ -16,6 +16,28 @@ private lemma beta_one_inv (B : ℕ) (hB : 1 ≤ B) : (1 : ℝ) / beta 1 (B : �
   rw [hGam]
   field_simp [hBne, (Real.Gamma_pos_of_pos hBpos).ne']
 
+/-- `betaMeasure 1 B` is absolutely continuous with respect to Lebesgue measure. -/
+private lemma betaMeasure_absolutelyContinuous (B : ℕ) :
+    betaMeasure 1 (B : ℝ) ≪ volume := by
+  rw [betaMeasure]
+  exact withDensity_absolutelyContinuous (volume : Measure ℝ) (betaPDF 1 (B : ℝ))
+
+/-- Lift a Lebesgue `ae_eq` of sets to a `betaMeasure` `ae_eq`. -/
+private lemma betaMeasure_ae_eq (B : ℕ) {s t : Set ℝ} (h : s =ᵐ[volume] t) :
+    s =ᵐ[betaMeasure 1 (B : ℝ)] t := by
+  rw [ae_eq_set] at h ⊢
+  exact ⟨betaMeasure_absolutelyContinuous B h.1, betaMeasure_absolutelyContinuous B h.2⟩
+
+/-- For a density measure, `Icc a b` and `Ioo a b` carry the same mass. -/
+private lemma betaMeasure_one_Icc_eq_Ioo (B : ℕ) {a b : ℝ} :
+    betaMeasure 1 (B : ℝ) (Set.Icc a b) = betaMeasure 1 (B : ℝ) (Set.Ioo a b) := by
+  exact (measure_congr (betaMeasure_ae_eq B (Ioo_ae_eq_Icc (μ := volume)))).symm
+
+/-- For a density measure, `Ico a b` and `Ioo a b` carry the same mass. -/
+private lemma betaMeasure_one_Ico_eq_Ioo (B : ℕ) {a b : ℝ} :
+    betaMeasure 1 (B : ℝ) (Set.Ico a b) = betaMeasure 1 (B : ℝ) (Set.Ioo a b) := by
+  exact (measure_congr (betaMeasure_ae_eq B (Ioo_ae_eq_Ico (μ := volume)))).symm
+
 /-- For `B ≥ 1` and `0 ≤ a ≤ b ≤ 1`. -/
 theorem betaMeasure_one_Ioo (B : ℕ) (hB : 1 ≤ B) {a b : ℝ}
     (ha : 0 ≤ a) (hab : a ≤ b) (hb : b ≤ 1) :
@@ -66,5 +88,55 @@ theorem betaMeasure_one_Ioo (B : ℕ) (hB : 1 ≤ B) {a b : ℝ}
   rw [← ofReal_integral_eq_lintegral_ofReal (f := fun x => (B : ℝ) * (1 - x) ^ (B - 1))
     (μ := volume.restrict (Set.Ioc a b)) hfi hnn]
   rw [hInt]
+
+/-- `Pr(X ≥ t)` for `X ~ Beta(1, B)`, with `0 ≤ t ≤ 1`. -/
+theorem betaMeasure_one_Ici (B : ℕ) (hB : 1 ≤ B) {t : ℝ} (ht : 0 ≤ t) (ht1 : t ≤ 1) :
+    betaMeasure 1 (B : ℝ) (Set.Ici t) = ENNReal.ofReal ((1 - t) ^ B) := by
+  have hIci1 : betaMeasure 1 (B : ℝ) (Set.Ici 1) = 0 := by
+    rw [betaMeasure, withDensity_apply _ measurableSet_Ici]
+    exact setLIntegral_eq_zero measurableSet_Ici (fun x hx => betaPDF_eq_zero_of_one_le hx)
+  have hdisj : Disjoint (Set.Ico t 1) (Set.Ici (1 : ℝ)) := by
+    rw [Set.disjoint_left]
+    intro x hx1 hx2
+    rw [Set.mem_Ico] at hx1
+    rw [Set.mem_Ici] at hx2
+    linarith
+  calc
+    betaMeasure 1 (B : ℝ) (Set.Ici t)
+        = betaMeasure 1 (B : ℝ) (Set.Ico t 1 ∪ Set.Ici (1 : ℝ)) := by
+          rw [← Set.Ico_union_Ici_eq_Ici ht1]
+    _ = betaMeasure 1 (B : ℝ) (Set.Ico t 1) + betaMeasure 1 (B : ℝ) (Set.Ici (1 : ℝ)) := by
+          rw [measure_union hdisj measurableSet_Ici]
+    _ = betaMeasure 1 (B : ℝ) (Set.Ico t 1) := by simp [hIci1]
+    _ = betaMeasure 1 (B : ℝ) (Set.Ioo t 1) := betaMeasure_one_Ico_eq_Ioo B
+    _ = ENNReal.ofReal ((1 - t) ^ B - (1 - 1) ^ B) :=
+          betaMeasure_one_Ioo B hB ht ht1 le_rfl
+    _ = ENNReal.ofReal ((1 - t) ^ B) := by
+          rw [sub_self, zero_pow (show B ≠ 0 by omega), sub_zero]
+
+/-- `Pr(X ≤ u)` for `X ~ Beta(1, B)`, with `0 ≤ u ≤ 1`. -/
+theorem betaMeasure_one_Iic (B : ℕ) (hB : 1 ≤ B) {u : ℝ} (hu : 0 ≤ u) (hu1 : u ≤ 1) :
+    betaMeasure 1 (B : ℝ) (Set.Iic u) = ENNReal.ofReal (1 - (1 - u) ^ B) := by
+  have hIio0 : betaMeasure 1 (B : ℝ) (Set.Iio (0 : ℝ)) = 0 := by
+    rw [betaMeasure, withDensity_apply _ measurableSet_Iio]
+    exact setLIntegral_eq_zero measurableSet_Iio (fun x hx => betaPDF_eq_zero_of_nonpos (le_of_lt hx))
+  have hdisj : Disjoint (Set.Iio (0 : ℝ)) (Set.Icc 0 u) := by
+    rw [Set.disjoint_left]
+    intro x hx1 hx2
+    rw [Set.mem_Iio] at hx1
+    rw [Set.mem_Icc] at hx2
+    linarith
+  calc
+    betaMeasure 1 (B : ℝ) (Set.Iic u)
+        = betaMeasure 1 (B : ℝ) (Set.Iio (0 : ℝ) ∪ Set.Icc 0 u) := by
+          rw [← Set.Iio_union_Icc_eq_Iic hu]
+    _ = betaMeasure 1 (B : ℝ) (Set.Iio (0 : ℝ)) + betaMeasure 1 (B : ℝ) (Set.Icc 0 u) := by
+          rw [measure_union hdisj measurableSet_Icc]
+    _ = betaMeasure 1 (B : ℝ) (Set.Icc 0 u) := by simp [hIio0]
+    _ = betaMeasure 1 (B : ℝ) (Set.Ioo 0 u) := betaMeasure_one_Icc_eq_Ioo B
+    _ = ENNReal.ofReal ((1 - 0) ^ B - (1 - u) ^ B) :=
+          betaMeasure_one_Ioo B hB (le_refl 0) hu hu1
+    _ = ENNReal.ofReal (1 - (1 - u) ^ B) := by
+          rw [sub_zero, one_pow]
 
 end Scratch

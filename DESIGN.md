@@ -343,7 +343,15 @@ discussion.
 
   which holds because `X − Y ≥ t − u ≥ s > 0 ⟹ |X − Y| = X − Y ≥ s`. It needs no measure theory
   beyond `Measure.prod_prod`, no Chernoff, and no optimisation: it costs one product of one-sample
-  tail probabilities. `Scratch/MainBox.lean` proves the containment and the assembly (CLOSED).
+  tail probabilities. `Scratch/MainBox.lean` proved the containment and the assembly (CLOSED); the
+  route is **DONE** as of 2026-09-18 — shipped as `TSDPP/Lemma5Refutation.lean` with the two
+  hypothesis slots (`hIci`/`hIic`, `harith`) discharged by `TSDPP/BetaOneCDF.lean` and
+  `TSDPP.refute_arith`, so both headline theorems are **unconditional** and audited (90
+  declarations). Card: `cards/L5-REFUTATION.md`. **Scope limit, restated here so it is not lost:**
+  what is refuted is the `r ≥ 1` statement this artifact registered; the paper's own Lemma 5
+  (`0 ≤ r ≤ 1`, p. 9 Eq (31)) is *not* refuted by it, and neither is the paper's theorem — the
+  finding is that Eq (33) applies the lemma outside its stated range, which is a citation failure,
+  not a propositional one.
 
   **Witness selection is the whole design problem**, and it is a Lean-cost problem, not a
   probability problem:

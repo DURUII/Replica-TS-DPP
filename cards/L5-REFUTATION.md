@@ -1,12 +1,59 @@
 # L5-REFUTATION — the registered Lemma 5 target is FALSE
 
-**Status: OPEN (in flight).**  Two of the five nodes below are closed in Lean; the other three are
-being discharged by parallel groups.  This card is the *refutation* counterpart of `L5.md`: that
-card asks "is the registered target provable?", this one answers "no, and here is the certificate".
+**Status: CLOSED (machine-checked).**  All five nodes are closed.  The refutation is
+`lean4/TSDPP/Lemma5Refutation.lean`, unconditional, audited (`scripts/check_axioms.sh`: 90
+declarations, each depending on nothing or on a subset of `{propext, Classical.choice, Quot.sound}`).
+This card is the *refutation* counterpart of `L5.md`: that card asks "is the registered target
+provable?", this one answers "no, and here is the certificate".
 
 Trap record: `../DESIGN.md` P-64 (the register is false at all), P-67 (it also fails on the paper's
 own parameter curve against the paper's own constant), P-68 (the small-`α`/`β` corner admits no
-reference but the density itself), P-69 (a figure without its grid is not evidence).
+reference but the density itself), P-69 (a figure without its grid is not evidence),
+P-70 (an asymptotic criterion quoted as the exact threshold of a finite witness).
+
+---
+
+## 0. SCOPE — what this refutation does *not* say
+
+Written first, because "refutation" invites over-reading and the wrong reading here is a serious one.
+
+**It is a refutation of one lemma's `r ≥ 1` form — not of the paper.**  Three claims must be kept
+apart, and they have three different answers:
+
+| # | claim | verdict |
+|---|-------|---------|
+| 1 | the registered `r ≥ 1` target, `c = 11/100` | **FALSE** — machine-checked, `lemma5_as_registered_is_false` |
+| 2 | the **paper's own Lemma 5**, stated for `0 ≤ r ≤ 1` (`paper.pdf` p. 9 Eq (31)) | **not refuted — and almost certainly true** |
+| 3 | the paper's **theorem** (its regret bound) | **not refuted, and not refutable from what is here** |
+
+Why (2) survives.  The witness sits at `r = 14`, entirely outside the paper's declared range.  On
+`0 ≤ r ≤ 1` the paper's bound holds with room: over a sweep of `(α, β, r)` the worst ratio
+`Pr(|X−Y| ≥ rE(X)) / (2·exp(−αr²/8))` is **0.393**, and the trend is that larger `α` buys more room
+(`(50,1000)` at `r = 1` uses `2e-4` of the budget).  There is also a hard ceiling: as `r → 0⁺` the
+left side tends to `1` and the right to `2`, so the ratio tends to `1/2` from below and **that range
+cannot be violated at all**.  The refutation's witness family therefore cannot reach it.
+
+Why (3) survives.  **A proof step that does not go through does not make the theorem false.**  What
+is established is that Eq (33) applies Lemma 5 at `r = max{1, √(8 log T/α)} ≥ 1`, outside the range
+the lemma is stated for — a citation failure, not a propositional one.  The theorem may well be true
+by another route.  Refuting it would need a regret counterexample, which needs the problem statement
+(Eq (10),(12),(13)) formalized — and this artifact never did that: card `R4` is **NOT FORMALIZED**.
+
+So the honest one-liner is: **the artifact's own registration was wrong, and the paper's *use* of
+Lemma 5 is invalid — not that the paper's theory is false.**
+
+Two honest footnotes on how much of this is *proved* versus *argued*:
+
+* That the paper's Lemma 5 is stated for `0 ≤ r ≤ 1` is a **textual** fact (quoted above from
+  `paper.pdf` p. 9), not a Lean theorem.  Nothing in this repo formalizes the paper's prose.
+* The `0.393` worst-ratio sweep and the `r → 0⁺ ⟹ ratio → 1/2` ceiling are **numerical and
+  analytic arguments, not machine-checked**.  They say the paper's Lemma 5 is *not obviously false*;
+  they do not prove it.  This card does not claim it as a Lean result, and no card should.
+
+The reason this bug survived to submission is structural, and worth stating: the true tail exponent
+is about `αr²/2` while the paper claims `αr²/8`.  Near `r ≤ 1` the claimed exponent is far *larger*
+than the truth, so the bound is comfortably satisfied and looks fine; the gap only opens up at large
+`r`.  A constant that is 4× too weak is invisible in exactly the regime the paper checks it in.
 
 ---
 
@@ -99,25 +146,53 @@ other hypothesis of Theorem 2 holds at `T = e^{49/2}`.)
 
 ## 2. Proof card — five nodes
 
-```
-  N1  betaMeasure 1 B (Ioo a b) = ofReal ((1−a)^B − (1−b)^B)     [Beta tail values]
-   │    0 ≤ a ≤ b ≤ 1, B ≥ 1                OPEN  (group A, Scratch/BetaOneCDF.lean)
-   │
-   ├──► N2  (86/101)^100 ≥ exp(−750/43)                                    OPEN (group C)
-   ├──► N3  (100/101)^100 ≤ 2/5,  i.e. 1 − (100/101)^100 ≥ 3/5             OPEN (group C)
-   └──► N4  2·exp(−539/25) < (3/5)·exp(−750/43)                            OPEN (group C)
-                 ⇔ exp(4427/1075) > 10/3,  from Real.add_one_le_exp
+**All five nodes are CLOSED.**  The `MainBox.lean` assembly that took `N1` and `N4` as *hypotheses*
+has been replaced: in `TSDPP/Lemma5Refutation.lean` those hypotheses are discharged by
+`TSDPP.betaMeasure_one_Ici` / `_Iic` and `TSDPP.refute_arith`, so the two headline theorems carry
+**no hypotheses at all**.
 
-  N5  box containment: s ≤ t−u ⟹ {X≥t}×{Y≤u} ⊆ {|X−Y|≥s}      CLOSED  (Scratch/MainBox.lean)
-   │
-   └──► N0  ¬ (∀ α β r, …)                                      CLOSED GIVEN N1–N5
-                (Scratch/MainBox.lean: assembly, hypotheses N1/N2+N3+N4 explicit)
+```
+  N1  betaMeasure 1 B (Ioo a b) = ofReal ((1-a)^B - (1-b)^B)     [Beta tail values]
+   |    0 <= a <= b <= 1, B >= 1         CLOSED   TSDPP/BetaOneCDF.lean
+   |    0 <= t <= 1  ==>  Ici t = ofReal ((1-t)^B)
+   |    0 <= u <= 1  ==>  Iic u = ofReal (1 - (1-u)^B)
+   |
+   +--> N2  (86/101)^100 >= exp(-750/43)                        CLOSED   exp_neg_le_pow_86_101
+   +--> N3  (100/101)^100 <= 2/5, i.e. 1-(100/101)^100 >= 3/5   CLOSED   pow_100_101_le
+   +--> N4  2*exp(-539/25) < (3/5)*exp(-750/43)                 CLOSED   arith_core
+                 <=> exp(4427/1075) > 10/3, from Real.add_one_le_exp
+   |
+   +--> N4' refute_arith: the residual against LB itself        CLOSED   slack 75.79x
+
+  N5  box containment: s <= t-u ==> {X>=t}x{Y<=u} subset {|X-Y|>=s}   CLOSED
+   |
+   +--> N0  not (forall a b r, ...)                             CLOSED, UNCONDITIONAL
+                TSDPP/Lemma5Refutation.lean -- zero hypotheses
 ```
 
-`N0` is already compiled with `N1` (two tail facts) and `N4` (the arithmetic residual) as **explicit
-hypotheses** — so the assembly itself is verified, and the three open nodes are exactly the
-remaining work.  There is no `sorry` in the shipped sense: scratch `sorry`s are development
-placeholders and are removed at promotion (task #8's convention).
+Two side conditions on `N1` are **load-bearing, and were found the hard way** (recorded in
+`BetaOneCDF.lean`'s header): the `Ici` form needs `t <= 1` as well as `0 <= t`, because for `t > 1`
+the left side is `0` while `(1-t)^B` is positive for even `B` and negative for odd -- no single
+formula holds; and the `Iic` form needs both `0 <= u` and `u <= 1`.  An earlier brief asked for the
+`Ici` form with only `0 <= t`; **that statement is false**, and the extra hypothesis is the fix, not
+a convenience.  Both instantiations (`t = 15/101`, `u = 1/101`) sit inside `[0,1]`, so neither is
+obstructed.
+
+Slack at each link, all measured rather than eyeballed -- nothing here is delicate:
+
+| node | quantity | slack |
+|---|---|---|
+| N2 | `(86/101)^100 / exp(-750/43)` | 3.914x |
+| N3 | `(2/5) / (100/101)^100` | 1.082x |
+| N4 | `(3/5)*exp(-750/43) / (2*exp(-539/25))` | 18.43x |
+| N4' | `LB / (2*exp(-539/25))` | **75.79x** |
+
+`N3`'s 1.082x is the tightest link, and it is why the constant is `2/5` rather than something
+rounder.  `3/8` **also** closes the chain -- it is the *better* lower bound on `1 - (100/101)^100`,
+giving 19.20x at N4' -- but it needs `n = 5` Taylor terms where `2/5` needs `n = 4`
+(`sum_{i<4} (100/101)^i/i! = 2.642` clears `5/2` but not `8/3`).  Both were verified to close; `2/5`
+was kept because it landed first with fewer terms.  Recorded because a mid-flight re-brief went out
+asserting `2/5` was necessary -- it was not.
 
 ### N1 — the Beta(1,B) tail values
 
@@ -177,16 +252,16 @@ The binding link is N3.  N1 and N5 are exact, not inequalities.
 
 ```
    N0  (¬ registered target)
-    ├── N5  box containment                    CLOSED
-    ├── N1  Beta(1,B) tail values              OPEN → group A
+    ├── N5  box containment                    CLOSED  prod_Ici_prod_Iic_le_abs_sub
+    ├── N1  Beta(1,B) tail values              CLOSED  TSDPP/BetaOneCDF.lean
     │        └── (Mathlib: betaMeasure, betaPDFReal, beta 1 B = 1/B)
-    └── N4  arithmetic residual                OPEN → group C
-             ├── N2  exp(−750/43) ≤ (86/101)^100
-             └── N3  (100/101)^100 ≤ 2/5
+    └── N4  arithmetic residual                CLOSED  TSDPP/Lemma5Refutation.lean
+             ├── N2  exp(−750/43) ≤ (86/101)^100   CLOSED
+             └── N3  (100/101)^100 ≤ 2/5           CLOSED
 ```
 
-No open node is carried as an axiom.  When `N1`, `N2`, `N3`, `N4` land, `N0` is closed by
-substitution and the three hypotheses disappear from the statement — the shipped theorem will be
+No node is carried as an axiom.  All five are closed, `N0` is closed by substitution, and the
+hypotheses that `MainBox.lean` took are gone from the statement.  The shipped theorem is
 
 ```lean
 theorem lemma5_as_registered_is_false :

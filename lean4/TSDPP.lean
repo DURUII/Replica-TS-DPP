@@ -52,3 +52,10 @@ import TSDPP.GammaRatioMap
 -- the new `#print axioms` lines audit is the *reduction*, not the target.  Its nine `private`
 -- helpers are file-scoped in Lean 4 and cannot be named from `Audit.lean`.
 import TSDPP.BetaConcentration
+-- The machine-checked refutation of the registered Lemma 5 target, plus the `Beta(1,B)` closed-form
+-- tail it rests on.  This is the artifact's answer to `CLAUDE.md` item 1 ("完整证明**或反证**"):
+-- `lemma5_as_registered_is_false` and `paper_lemma5_range_ge_one_is_false` are unconditional.
+-- Note the SCOPE banner in `Lemma5Refutation.lean`: the `r ≥ 1` statement is refuted, the paper's
+-- own Lemma 5 (stated for `0 ≤ r ≤ 1`) is not, and neither is the paper's theorem.
+import TSDPP.BetaOneCDF
+import TSDPP.Lemma5Refutation

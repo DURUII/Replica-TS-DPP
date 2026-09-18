@@ -1,0 +1,6 @@
+policy,tail_penalty,vs_tsdpp,se_tsdpp,vs_oracle,se_oracle,cost
+"oracle  Eq (13), theta known",77.2127,-0.4154,0.0889,0.0,0.0,0.346678
+tsdpp   Eq (13),77.6281,0.0,0.0,0.4154,0.0889,0.347061
+whittle no budget term,74.373,-3.2551,0.2483,-2.8397,0.2525,0.351438
+whittle + budget term,74.4725,-3.1555,0.2485,-2.7402,0.2515,0.348505
+"whittle + budget, theta known",74.573,-3.0551,0.2783,-2.6397,0.269,0.348369

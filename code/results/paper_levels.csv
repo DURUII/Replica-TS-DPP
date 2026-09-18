@@ -1,0 +1,9 @@
+figure,panel,N,L,V,curve,plateau,gap_vs_oracle
+3,a,4,20,0.2,Lyapunov,68.45,1.707
+3,a,4,20,0.2,Whittle,71.19,4.449
+3,a,4,20,0.2,Belief-DPP,66.74,0.0
+3,a,4,20,0.2,TS-DPP,66.75,0.012
+4,a,8,20,0.2,Lyapunov,90.58,2.691
+4,a,8,20,0.2,Whittle,96.29,8.403
+4,a,8,20,0.2,Belief-DPP,87.89,0.0
+4,a,8,20,0.2,TS-DPP,88.03,0.142

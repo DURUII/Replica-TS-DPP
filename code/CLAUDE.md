@@ -1,1 +1,0 @@
-this folder holds the replica code of paper.pdf

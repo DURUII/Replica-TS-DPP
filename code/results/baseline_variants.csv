@@ -1,0 +1,7 @@
+variant,tail_penalty,paired_gap,se,verdict
+hsu_on_belief,147.9489,70.7362,2.6637,worse than oracle
+hsu_on_copy_age,95.148,17.9353,1.5911,worse than oracle
+derived_2d,74.373,-2.8397,0.2525,better than oracle
+eq13_on_belief,77.6281,0.4154,0.0889,worse than oracle
+eq13_no_budget,77.9102,0.6975,0.1501,worse than oracle
+eq13_on_copy_age,121.1272,43.9145,1.8105,worse than oracle

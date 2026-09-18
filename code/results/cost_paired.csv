@@ -1,0 +1,5 @@
+a,b,mean_diff,se,runs
+whittle,tsdpp,0.004533,0.00121,200
+whittle,lyapunov,0.004377,0.001224,200
+whittle,oracle,0.004761,0.001273,200
+oracle,tsdpp,-0.000228,0.000407,200

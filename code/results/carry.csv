@@ -1,0 +1,17 @@
+setting,V,policy,boundary,ep1,ep5,ep100,plateau,ep1_over_plateau
+realworld,0.04,oracle,reset,97.5707,98.6184,99.371,99.2355,0.9832
+realworld,0.04,oracle,carried,97.5707,151.5132,154.0125,154.9941,0.6295
+realworld,0.04,oracle,carried_z,97.5707,164.8228,380.452,369.9186,0.2638
+realworld,0.06,oracle,reset,96.8609,98.1605,98.8818,98.7352,0.981
+realworld,0.06,oracle,carried,96.8609,151.0609,153.5068,154.5875,0.6266
+realworld,0.06,oracle,carried_z,96.8609,160.6471,320.9882,310.2135,0.3122
+realworld,0.08,oracle,reset,96.7864,97.9622,98.5934,98.5155,0.9824
+realworld,0.08,oracle,carried,96.7864,150.963,153.3726,154.388,0.6269
+realworld,0.08,oracle,carried_z,96.7864,158.8281,268.3712,271.8253,0.3561
+realworld,0.1,oracle,reset,96.6234,97.9959,98.4451,98.3917,0.982
+realworld,0.1,oracle,carried,96.6234,150.7465,153.2664,154.3112,0.6262
+realworld,0.1,oracle,carried_z,96.6234,156.9682,250.7216,243.8803,0.3962
+synthetic,0.2,oracle,reset,79.7771,75.9318,76.9458,76.8455,1.0381
+synthetic,0.2,oracle,carried,79.7771,119.2852,135.7662,140.9807,0.5659
+synthetic,0.2,tsdpp,reset,85.8955,78.9097,77.7213,77.3258,1.1108
+synthetic,0.2,tsdpp,carried,85.8955,130.1632,152.4135,150.496,0.5707

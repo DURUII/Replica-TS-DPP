@@ -1,8 +1,7 @@
 # L5-REFUTATION — the registered Lemma 5 target is FALSE
 
 **Status: CLOSED (machine-checked).**  All five nodes are closed.  The refutation is
-`lean4/TSDPP/Lemma5Refutation.lean`, unconditional, audited (`scripts/check_axioms.sh`: 90
-declarations, each depending on nothing or on a subset of `{propext, Classical.choice, Quot.sound}`).
+`lean4/TSDPP/Lemma5Refutation.lean`, unconditional, audited by `lean4/scripts/check_axioms.sh` against `Audit.lean`; each declaration depends on nothing or on a subset of `{propext, Classical.choice, Quot.sound}`.
 This card is the *refutation* counterpart of `L5.md`: that card asks "is the registered target
 provable?", this one answers "no, and here is the certificate".
 
@@ -271,7 +270,7 @@ theorem lemma5_as_registered_is_false :
           ≤ ENNReal.ofReal (2 * Real.exp (-(11 / 100) * α * r ^ 2)))
 ```
 
-with no hypotheses at all.  Then `Audit.lean` and `scripts/check_axioms.sh` apply to it unchanged.
+with no hypotheses at all.  Then `Audit.lean` and `lean4/scripts/check_axioms.sh` apply to it unchanged.
 
 ---
 

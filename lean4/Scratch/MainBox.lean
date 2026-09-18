@@ -5,7 +5,7 @@ open scoped ENNReal
 
 -- Skeleton of the machine-checked refutation of the registered Lemma 5 target.
 -- The two Beta(1,B) tail facts are taken here as hypotheses (`hIci`, `hIic`);
--- `Scratch/BetaOneCDF.lean` is the file that discharges them.
+-- `TSDPP/BetaOneCDF.lean` is the file that discharges them.
 
 namespace TSDPP
 

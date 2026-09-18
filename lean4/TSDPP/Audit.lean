@@ -172,7 +172,7 @@ import TSDPP
 #print axioms TSDPP.betaMeasure_Iio_le
 #print axioms TSDPP.unionWitness
 
--- The map-level ratio law (task #9).  This is what turns the two one-sample tails' `hmap`
+-- The map-level ratio law.  This is what turns the two one-sample tails' `hmap`
 -- hypothesis from an assumption into something dischargeable from the tree.
 #print axioms TSDPP.gamma_ratio_isBetaMeasure
 -- A public global instance added by that file, needed so `Measure.prod_prod` fires.  Audited
@@ -241,3 +241,26 @@ import TSDPP
 #print axioms TSDPP.lemma5_range_ge_one_is_false
 #print axioms TSDPP.lemma5_as_registered_is_false
 #print axioms TSDPP.paper_lemma5_range_ge_one_is_false
+
+-- ---------------------------------------------------------------------------------------------
+-- THE PAPER'S OWN LEMMA 5, REDUCED — `TSDPP/Lemma5PaperRange.lean`
+-- ---------------------------------------------------------------------------------------------
+--
+-- Complementary to the block above, and easy to confuse with it.  `Lemma5Refutation.lean` *refutes*
+-- the registered statement on `r ≥ 1`; this module works the paper's own range `0 ≤ r ≤ 1`
+-- (`paper.pdf` p. 9 Eq (31)) and does **not** close it.  `betaMeasure_prod_abs_sub_le_of_mgf` is
+-- conditional on `BetaProdMGFBound` — a `def … : Prop` carried as an explicit hypothesis, never an
+-- axiom — so what is audited here is a *reduction*, exactly as in the `BetaConcentration` block.
+-- `betaMeasure_prod_abs_sub_le_of_log2` is unconditional but covers only `α r² ≤ 8 log 2`, where the
+-- claimed bound is `≥ 1`, so it follows from `ν S ≤ ν univ = 1` and needs no analytic input.
+--
+-- The reduction spends no slack: Markov at `λ := r(α+β)/4` gives `2αλ²/(α+β)² = αr²/8` and
+-- `λrμ = αr²/4`, so the exponent is exactly `−αr²/8`.  The MGF bound's own hypothesis
+-- `λ ≤ (α+β)/4` is, at that `λ`, exactly `r ≤ 1` — the paper's range restriction is the validity
+-- range of its own optimal tilt, which is why the range and the constant are what they are.
+--
+-- Residual `BetaProdMGFBound α β` is unproved; its global sup is `16/9 < 2`, approached only at
+-- `α → 0, β → ∞, u = (α+β)/4`, so no inequality with slack closes it.  `DESIGN.md` GAP-2.
+#print axioms TSDPP.BetaProdMGFBound
+#print axioms TSDPP.betaMeasure_prod_abs_sub_le_of_log2
+#print axioms TSDPP.betaMeasure_prod_abs_sub_le_of_mgf

@@ -7,7 +7,7 @@ Module: `lean4/TSDPP/Tail.lean`. Toolchain `leanprover/lean4:v4.35.0-rc2`, vendo
 Every entry is symptom -> cause -> fix, with the error text copied verbatim from
 `lake env lean TSDPP/Tail.lean`.
 
-> **Historical note (task #12).** These transcripts predate the parameterisation of the exponent
+> **Historical note.** These transcripts predate the parameterisation of the exponent
 > constant. `Tail.lean`'s two declarations now carry a parameter `c : ℝ`, `0 < c`, and their
 > exponents read `c * η * ((l : ℝ) + 1)` / `c * η` where the transcripts below show the literal
 > `η / 8` (the paper's value, which is now the instance `c = 1/8`). The *names*

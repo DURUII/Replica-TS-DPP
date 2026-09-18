@@ -61,16 +61,16 @@ disposition.  Four dispositions are possible, and only the first two count as wo
 | **Theorem 2** (Bayesian regret bound) | **closed, restated** | `TSDPP.theorem2_rate`, `theorem2_concrete` (**ROOT**) |
 | Lemma 1 (belief-DPP is a deterministic policy) | support only | `TSDPP.bestArm_congr` (the argmin is a function of the history) |
 | Lemma 2 (Eq (23),(24) Lipschitz bounds) | closed | `TSDPP.l1_lipschitz`, `firstMoment_lipschitz` |
-| Lemma 3 (regret decomposition, [28]) | **closed** | `TSDPP.sum_range_blocks`, `regret_decomp`, `episodeOf`, `regret_decomp_episodeOf` — *was* the hypothesis `hdecomp`, now derived |
-| Lemma 4 (per-episode decomposition, [28]) | **closed** | `TSDPP.simulation_lemma` (Eq (30)'s telescoping, on an arbitrary filtered probability space) and `TSDPP.bellman_step_le` (which derives `simulation_lemma`'s `hrec` from the two value recursions) — *was* the hypothesis `hper`, now derived |
+| Lemma 3 (regret decomposition, [28]) | **closed** | `TSDPP.sum_range_blocks`, `regret_decomp`, `episodeOf`, `regret_decomp_episodeOf` — the hypothesis `hdecomp` is derived, not assumed |
+| Lemma 4 (per-episode decomposition, [28]) | **closed** | `TSDPP.simulation_lemma` (Eq (30)'s telescoping, on an arbitrary filtered probability space) and `TSDPP.bellman_step_le` (which derives `simulation_lemma`'s `hrec` from the two value recursions) — the hypothesis `hper` is derived, not assumed |
 | Lemma 5 (concentration, [45]) | **NOT CLOSED — the registered form is FALSE** (traps P-64, P-67) | the union bound reduces it to `TSDPP.unionWitness` plus the Beta–Gamma ratio law, and that reduction is correct; but the artifact adopted `r ≥ 1` where the paper states `0 ≤ r ≤ 1`, and on `r ≥ 1` the bound fails exactly (`(2,200,10)` vs `11/100`; `(1,100,10)` vs `1/8`).  The paper's own range is true but unreachable by this method; see §3.4.  **P-67**: on Eq (33)'s own curve `r = max{1,√(8 log T/α)}` the **paper's** `1/8` fails too (5 of 6 sampled tuples, incl. `α=1, T=10⁶`), so the paper's *use* is false on its own settings |
 | Lemma 6 (state bound `X_i(t) ≤ D`) | closed | `TSDPP.tail_le_eps` |
 | Corollary 1 (`α^l_i ≥ η·l`) | **hypothesis** | premise `hηl` of `theorem2_rate`; **GAP-3**.  The premise captures *only* the inequality `α^l_i ≥ η·l`; the identification `η = ⌊L/(C+D)⌋` it is advertised as standing for is not formalized |
 
-**Two rows above were previously recorded as `closed` and are not.** Definition 1's list cited
+**Two rows above are qualified rather than plain `closed`.** Definition 1's list cited
 `copyStep_iterate`, which is a statement about Definition 3, not Definition 1; and Theorem 1's
 `lintegral_conj` closes the *density*, not the paper's Eq (14)/(20)/(21) index bookkeeping. Both
-rows are corrected here rather than in §3, because they are coverage errors, not divergences.
+are coverage qualifications rather than divergences, which is why they are recorded here.
 
 **One row is *under*-reported, in the artifact's favour.** `lintegral_conj` does more than the row
 claims: it pins the normalising constant, turning the paper's Eq (22) proportionality
@@ -89,18 +89,18 @@ and `bestArm_congr`: the paper's Lemma 1 asserts the belief-DPP policy is a dete
 function of the history, which is exactly the assertion that the argmin used by the policy is
 attained (`bestArm_spec`) and depends only on its index argument (`bestArm_congr`).
 
-**Two rows are still not closed, and they are not the same kind of gap.**  Lemma 3 and Lemma 4 were
-the two citations quoted from [28]; both are now *derived* — `regret_decomp_episodeOf` for Lemma 3,
+**Two rows are not closed, and they are not the same kind of gap.**  Lemma 3 and Lemma 4 are
+derived, not quoted — `regret_decomp_episodeOf` for Lemma 3,
 and `simulation_lemma` + `bellman_step_le` for Lemma 4.  What remains is:
 
-* **Lemma 5** (from [45]) — no longer a *hypothesis*, but **not closable in the form the artifact
-  registered, and the gap is not a constant** (trap P-64, §3.4).  This session reduced it to an
-  elementary union bound with a fixed witness and proved that reduction correct; then showed the
+* **Lemma 5** (from [45]) — not a *hypothesis*, but **refuted in the form the artifact
+  registered, and the gap is not a constant** (trap P-64, §3.4).  It is reduced to an
+  elementary union bound with a fixed witness, that reduction is proved correct, and the
   *target* is **false** on the range the artifact adopted.  The paper's Lemma 5 is `0 ≤ r ≤ 1`; the
   artifact's is `r ≥ 1`; the artifact inverted the range, and on the inverted range the bound fails
   exactly (witnesses `(α,β,r) = (2,200,10)` against `11/100`, `(1,100,10)` against `1/8`).  What
   remains open is therefore **the paper's actual statement, on `0 ≤ r ≤ 1`** — which is true
-  (`min c_eff = 0.242848` at the swept box's corner `(α,β,r) = (200,200000,1)`; corrected 2026-09-18 — the previously quoted `0.23838` was reproduced by neither of two independent routines and is superseded) and for which **no route is known**: the artifact's
+  (`min c_eff = 0.242848` at the swept box's corner `(α,β,r) = (200,200000,1)`) and for which **no route is known**: the artifact's
   union-bound method *requires* `r ≥ 1` for its split, so it cannot be repointed at the true range.
 * **The Corollary 1 premise `hηl`** — still a premise, and still the honest place to stop, because
   the identification `η = ⌊L/(C+D)⌋` depends on the episode bookkeeping the paper leaves informal.
@@ -108,7 +108,7 @@ and `simulation_lemma` + `bellman_step_le` for Lemma 4.  What remains is:
 What matters for fidelity is the *direction* of the dependency in both cases: `theorem2_rate` is
 stated so that if a reader supplies the premise, the regret bound follows — the artifact never
 assumes the conclusion it is trying to reach, and `#print axioms` confirms the premises contribute
-nothing to the axiom footprint.  The difference between the two rows is that Lemma 5's gap is now
+nothing to the axiom footprint.  The difference between the two rows is that Lemma 5's gap is
 *bounded and exhibited* (§3.4) whereas `hηl`'s is *unmodelled* (GAP-3).
 
 ### 1.0.1 Coverage of the 40 numbered equations
@@ -153,8 +153,8 @@ to the rate (Eq (19)).  It does **not** formalize the **problem statement** — 
 optimisation P1 (Eq (5)–(7)), the virtual queue (Eq (12)), the constrained policy (Eq (13)), the
 DPP index (Eq (10)), the observation model (Eq (11)) — nor the **definitions of the value function
 and the Bayesian regret** (Eq (17), (18)).  Those objects appear in `theorem2_concrete` as abstract
-reals (`BR`, `J`) and as hypotheses about them, rather than as definitions, and `cards/` has **no
-`R4.md`** to cover Eq (10), (12), (13).
+reals (`BR`, `J`) and as hypotheses about them, rather than as definitions; `cards/R4.md` records
+that Eq (10), (12), (13) are deliberately out of scope.
 
 So the precise claim this artifact is entitled to is:
 
@@ -247,9 +247,9 @@ needed and none is constructed — which is a fidelity-relevant *simplification*
 the product is literally the probability of that one path.
 
 **The formalization is strictly stronger than the paper here:** the paper says "for any `ε > 0`"
-and then reasons with `ε ∈ (0,1)`. The hypothesis `ε < 1` was in the first draft, the linter
-flagged it unused, and it was *dropped* rather than silenced. For `ε ≥ 1` the bound is trivial and
-the theorem now covers it.
+and then reasons with `ε ∈ (0,1)`. The formalization carries no `ε < 1` hypothesis: the linter
+reports it unused, and dropping it is the correct repair rather than silencing the warning. For
+`ε ≥ 1` the bound is trivial, so the theorem covers it.
 
 ### R13 / R14 — the tail and the finite-sum assembly (Eq (39), (40))
 
@@ -262,9 +262,9 @@ general exponent constant `c > 0` (`c·η` in place of the paper's `η/8`). The 
 
 **This is where the formalization deliberately departs from the paper's printed text** — see §3.
 
-> **[CORRECTED 2026-09-17 — trap P-64.  This paragraph used to end: "the paper's `c = 1/8` and the
+> **[CORRECTED — trap P-64.]**  The superseded reading held that "the paper's `c = 1/8` and the
 > artifact's `c = 11/100` are then the same theorem rather than two statements, so the divergence
-> recorded in §3.4 enters as a *substitution* at the use site."]**
+> recorded in §3.4 enters as a *substitution* at the use site."
 >
 > That is the correct description of what `Tail.lean` *proves* — `c` really is a free parameter, and
 > the `11/100 → 1/8` rewrite really is a substitution there. What is withdrawn is the implication
@@ -328,15 +328,15 @@ Note the last row: `ηl l = l+1` is exactly the shape Corollary 1 supplies
 (`α^l_i ≥ η·l`), so the hypothesis is not an artefact of the proof — it is the paper's own
 intermediate result.
 
-Of the three citation nodes, **two are no longer hypotheses**: `L34` (Lemma 3+4 of [28]) is
+Of the three citation nodes, **two are not hypotheses**: `L34` (Lemma 3+4 of [28]) is
 **derived** — `regret_decomp_episodeOf`, `simulation_lemma`, `bellman_step_le` — and `L5` (Lemma 5
-of [45]) has been reduced to an elementary union bound with a fixed witness (§3.4). Only `L5`'s
+of [45]) is reduced to an elementary union bound with a fixed witness (§3.4). Only `L5`'s
 constant and the Corollary 1 premise `hηl` remain unreached, and both are *visible in the
 statement*.
 
 This distinction matters for fidelity: an `axiom` would make the surrounding theorem true by fiat
 and hide what is assumed; a hypothesis makes the dependence visible to a reader. A reader who does
-not accept [28] can now check the derivation instead of taking it on faith, and a reader who wants
+not accept [28] can check the derivation instead of taking it on faith, and a reader who wants
 the paper's exact `1/8` is told exactly which lemma to prove (§3.4). `#print axioms` on every
 declaration listed above returns `[propext, Classical.choice, Quot.sound]` — the surviving premises
 contribute **nothing** to the axiom footprint.
@@ -382,7 +382,7 @@ the printed expansion matches `LC` and not `C(C+D)` (difference exactly `0` vers
 
 ### 3.4 Lemma 5's constant: `11/100` replaces `1/8` (GAP-2)
 
-> **[SUPERSEDED IN PART 2026-09-17 — trap P-64.]** This section was written on the premise that the
+> **[SUPERSEDED IN PART — trap P-64.]** This section is written on the premise that the
 > artifact and the paper differ **only in a constant**. They do not: they differ in the **range** of
 > `r`. The paper's Lemma 5 is `0 ≤ r ≤ 1`; the artifact's target is `r ≥ 1`. The artifact therefore
 > did not weaken a true statement, it **inverted the range of a true statement into a false one** —
@@ -397,13 +397,13 @@ the printed expansion matches `LC` and not `C(C+D)` (difference exactly `0` vers
 > P-62 and P-64, and J-11 for the route analysis that replaced them.
 
 This is the one place where the artifact's **statement** differs from the paper's, so it needs the
-most care — but per the P-64 banner above it is no longer accurate to call the difference a
-"numerically weaker" version of the same claim. The claim as originally written was:
+most care — but per the P-64 banner above it is not accurate to call the difference a
+"numerically weaker" version of the same claim. The claim as written was:
 
 > **`1/8` is unreachable by the union-bound method, and `11/100` is what that method provably
 > yields.** The ceiling of the method is `0.123302`, computed in closed form.
 
-**[RETRACTED 2026-09-17 — traps P-62 (layer 2) and P-64.]** Both halves fail. The ceiling is not a
+**[RETRACTED — traps P-62 (layer 2) and P-64.]** Both halves fail. The ceiling is not a
 ceiling (layer 2's `0.8839970429` is `sup_ρ min_δ max`, approached from below, so `min_δ max` is
 *below* it at every finite `ρ`), and `11/100` is not "what the method yields" in any region where
 the method is informative (P-64: outside the vacuous region `ρ ≤ r−1` the antecedent is
@@ -435,8 +435,7 @@ ceiling `sup_{s,ρ}[A(s)^α+B(s)^α]^{1/α} = 0.883997` at `t = 1/(e−1)`, givi
 The supremum is attained only as `ρ → ∞`, which is why it is invisible to any finite grid — a trap
 logged separately (P-23).
 
-**[CORRECTED 2026-09-17 — trap P-62.  The displayed supremum above is mis-stated and is retained
-only as the superseded record; no replacement bound on `r` or `α` is asserted here.]**
+**[CORRECTED — trap P-62.  The displayed supremum above is mis-stated; no replacement bound on `r` or `α` is asserted here.]**
 `sup_{s,ρ}[A(s)^α+B(s)^α]^{1/α} ≥ 1`,
 not `0.883997`: the `sup` ranges over `s → 0` (equivalently `δ = ρs → 0`), where `A → 1` and
 `B → 0`, so `[A^α+B^α]^{1/α} → max(A,B) → 1`, and a quantity that is `≥ 1` cannot equal `0.883997`.
@@ -446,7 +445,7 @@ What GAP-2b's calculation (the crude bounds `A ≤ (1+t)e^{−t}`, `B ≤ te^{1�
 about the `ρ → ∞` limit of `min_δ max(A_ρ,B_ρ)`, not an identity for `[A^α+B^α]^{1/α}` at fixed `α`
 (which is why the finite grid could not see it — P-23).
 
-Two *finite-`α`* consequences of the union bound stood here — a `ρ`-uniform ceiling on **`r`**
+Two *finite-`α`* consequences of the union bound are **not** asserted — a `ρ`-uniform ceiling on **`r`**
 (`r ≤ 1.058737`), then a `ρ`-dependent one (`r ≤ sqrt(−log m(ρ)/(11/100))`: `2.1435` at `ρ = 1/2`,
 `1.6172` at `ρ = 1`, `1.3467` at `ρ = 2`, `1.1773` at `ρ = 5`, `1.0889` at `ρ = 20`, `1.0648` at
 `ρ = 100`, `1.0587` only as `ρ → ∞`).  Both are **[RETRACTED — 该替换使用了对称切片的一维下界,对
@@ -478,8 +477,8 @@ gives `max = 0.861784` and the true constrained infimum is `0.846523`, both belo
 **`11/100` itself is `[UNDERIVED — 常数依据待独立重导]`**: the `α ≈ 52` threshold it was originally
 read off is downstream of the false chain, and no replacement derivation is claimed here.
 This is *not* a claim of a sealed wall at `r ≈ 1.06`.
-*Correction to the sentence that stood here:* it read "GAP-2c records the two routes that *would*
-reach `1/8` and why each is out of scope".  That presupposes the union-bound route *cannot* reach
+The claim that "GAP-2c records the two routes that *would*
+reach `1/8` and why each is out of scope" presupposes the union-bound route *cannot* reach
 `1/8`, which rests on `−log m(ρ) ≤ 0.123302` being an upper bound on the achievable exponent — and it
 is not: the constrained infimum collapses (guard (i)), so the achievable exponent is unbounded above
 (`r = 2`: `0.4685` at `s = 0.9` rising to `4.4319` at `s = 1−10⁻⁸`; `r = 5`: `0.3191` → `2.8472`).
@@ -495,10 +494,8 @@ leave margins under 1% and make the Lean proof depend on the last digits of an `
 concession buys a robust proof. It is a *deliberate* trade, recorded so that no future reader
 mistakes it for an overshoot.
 
-*[CORRECTED 2026-09-17 — traps P-62/P-64.]* This paragraph previously read "pushing toward the
-`0.123302` ceiling would leave margins under 1%", and closed by reading the concession off that
-ceiling. There is no established ceiling to push toward (P-62 layer 2 retracted `0.123302` as a
-bound), and the choice cannot be justified by proximity to one. The *arithmetic* reason above is
+The concession is not read off any ceiling: there is no established ceiling to push toward
+(P-62 layer 2 retracts `0.123302` as a bound), so the choice is not justified by proximity to one. The *arithmetic* reason above is
 unaffected and is the reason that survives: what is being bought is margin under a rational
 witness, not a fraction of a known limit. Note also that `11/100` is not merely "conservative" —
 P-64 shows it is **false** on the registered range, so the number this paragraph explains is the
@@ -523,9 +520,9 @@ margin.
 
 **Paper's own inconsistency — and it is a live defect, not a reconcilable one.** Lemma 5 is stated
 "for all `0 ≤ r ≤ 1`", but Eq (33) uses `r^l_i = max{1, √(8 log T/α^l_i)} ≥ 1` and cites the lemma at
-that `r`.  An earlier version of this section called the two "reconcilable", arguing
+that `r`.  The argument that the two are "reconcilable" —
 `{|X−Y| ≥ rμ} ⊆ {|X−Y| ≥ μ}` for `r ≥ 1`, "so only the `r = 1` case is ever needed, which is what
-the artifact proves".  **That argument is invalid and the passage is retracted.**
+the artifact proves" — is **invalid**.
 
 The containment is real but irrelevant: it compares the *events*, while the bound's right-hand side
 `2e^{−αr²/8}` shrinks with `r` at the same time.  The claim is *harder* at large `r`, not easier — at
@@ -568,8 +565,7 @@ ways, so replacing `1/8` by `11/100` has to be propagated deliberately. The thre
 1. Eq (33) sets the confidence radius `r^l_i = √(8 log T/α^l_i)`, chosen so that `α r²/8 = log T`
    and the per-episode failure probability is `2e^{−log T} = 2/T`.
 2. Eq (40)'s tail uses `2e^{−α^l/8}`, which comes from `r^l ≥ 1 ⟹ (r^l)² ≥ 1` — so the *tail*
-   exponent carries `r² = 1` and **not** the `8` of the radius. These two are easy to conflate; an
-   earlier revision of `cards/R13.md` did.
+   exponent carries `r² = 1` and **not** the `8` of the radius. These two are easy to conflate.
 3. The truncation index `n = ⌈8 log T/η⌉` and the additive `2m/T` slack are the same fact read twice.
 
 **Consequence, and the reason `K₀ = 100/11` and not `8`.** The tail's geometric ratio is
@@ -590,8 +586,8 @@ Everything downstream that mentions the radius follows mechanically:
 intermediate bound is `2√(K₀Z) ≤ 7√Z` and it *survives*: `2√(100/11) = 6.030227 ≤ 7` with `0.97` of
 slack, and the proof step needs only `100/11 ≤ 49/4 = 12.25`. It is the tail's `+1` that crosses:
 `2√(100/11) + 1 = 7.030226`, so the constant `7 = 6 + 1` (valid at the paper's `2√8 + 1 = 6.656854`)
-becomes `8 = 7 + 1`. Both numbers were checked before the substitution was made — this is trap P-19
-re-armed, and the check that matters is the *second* one (see P-19's task-#12 update and P-48).
+becomes `8 = 7 + 1`. Both numbers are checked, and the check that matters is the *second* one —
+this is trap P-19 re-armed (see P-19 and P-48).
 
 **What `K = 8` would cost, recorded rather than silently avoided.** Keeping the paper's radius
 constant would give a tail term `2m/T^{0.88} = O(T^{0.12}/L)`. That does **not** destroy the rate —
@@ -602,7 +598,7 @@ in the constant instead. Either way the rate `O(√(L³T log T))` is unchanged: 
 converges for every `c > 0`, which is the bullet above.
 
 **Direction of the hypothesis change.** `hdelta` in `eq39_collapse` / `theorem2_concrete` /
-`theorem2_rate` / `theorem3_rate` is now `delta l t ≤ √(K₀ log T/ηl l)`, which is *larger* than the
+`theorem2_rate` / `theorem3_rate` is `delta l t ≤ √(K₀ log T/ηl l)`, which is *larger* than the
 paper's `√(8 log T/ηl l)` by `√(100/88) = 1.066`. A larger right-hand side is an easier hypothesis
 to discharge, so this substitution moves the artifact *toward* the paper's Lemma 5, not away from
 it: whatever proved the paper's radius proves this one a fortiori, which is the direction required —
@@ -655,7 +651,7 @@ the two constants the radius carries.
 
 `theorem2_rate` is the paper's rate with the coefficient `c` written out, and it is obtained from
 `theorem2_concrete` by the single application of `regretCoeff_le_mul`.  So there is **no remaining
-hand arithmetic in the constant**: what used to be §4's caveat is now three Lean declarations.
+hand arithmetic in the constant**: every step of §4 is a Lean declaration.
 
 What is *not* formalized is the passage from `c·L·√(L³T log T/η)` to the `O(·)` symbol itself.
 That step is bookkeeping over an undefined notion — `O(·)` needs a filter on `T` and a decision
@@ -669,7 +665,7 @@ decision, not a mathematical one, and it is left to the reader rather than silen
 
 | failure mode | audited in | verdict |
 |---|---|---|
-| **silently dropped** (a paper item never appears) | §1.0 coverage table | **partly — and this is the largest single caveat in this file.** All 13 numbered *environments* are enumerated and dispositioned. But §1.0.1 shows 8 of the 40 numbered equations are **absent**, and they are not incidental: they are the problem statement itself — P1 (Eq (5)–(7)), the DPP index (Eq (10)), the observation model (Eq (11)), the virtual queue (Eq (12)), the constrained policy (Eq (13)), the index update (Eq (14)) — plus the **definitions** of the value function `J` (Eq (17)) and the Bayesian regret `BR` (Eq (18)). `BR` and `J` enter `theorem2_concrete` as abstract reals satisfying hypotheses, not as defined objects, and `cards/` has no `R4.md`. Nothing is hidden, but the artifact formalizes the paper's *analysis*, not its *problem statement* |
+| **silently dropped** (a paper item never appears) | §1.0 coverage table | **partly — and this is the largest single caveat in this file.** All 13 numbered *environments* are enumerated and dispositioned. But §1.0.1 shows 8 of the 40 numbered equations are **absent**, and they are not incidental: they are the problem statement itself — P1 (Eq (5)–(7)), the DPP index (Eq (10)), the observation model (Eq (11)), the virtual queue (Eq (12)), the constrained policy (Eq (13)), the index update (Eq (14)) — plus the **definitions** of the value function `J` (Eq (17)) and the Bayesian regret `BR` (Eq (18)). `BR` and `J` enter `theorem2_concrete` as abstract reals satisfying hypotheses, not as defined objects; `cards/R4.md` records that Eq (10), (12), (13) are deliberately out of scope. Nothing is hidden, but the artifact formalizes the paper's *analysis*, not its *problem statement* |
 | **too weak** (instance mistaken for the general claim) | §1 per-item table | no — every `∀` in the paper appears as a `∀` in the Lean, with the same domain |
 | **vacuous** (unsatisfiable hypotheses) | §2 satisfiability audit | no — every non-trivial hypothesis has an exhibited witness |
 | **shifted** (wrong direction / quantifier order) | §1 direction column, §3 | no — the only divergences (§3) are documented, forced, and do not alter the conclusion |
@@ -680,7 +676,7 @@ The last row is the honest boundary of this artifact.  Everything the paper *der
 machine-checked, up to and including the headline `theorem2_concrete`; what remains by hand is
 naming the asymptotic constant, not establishing the rate.
 
-**Also checked, and worth stating:** the headline bound was falsified numerically *before* its
+**Also checked, and worth stating:** the headline bound is falsified numerically as well as
 proof was trusted — `eq39_collapse` attains `0.889` of its bound and `theorem2_concrete` has zero
 violations over a grid at the `hηT` / `hBle` hypothesis boundaries.  This is the same discipline
 applied to R9's tight constants in §1, and it is what would have caught a mis-stated (as opposed

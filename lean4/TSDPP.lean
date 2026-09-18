@@ -59,3 +59,10 @@ import TSDPP.BetaConcentration
 -- own Lemma 5 (stated for `0 ≤ r ≤ 1`) is not, and neither is the paper's theorem.
 import TSDPP.BetaOneCDF
 import TSDPP.Lemma5Refutation
+-- The paper's own Lemma 5 (Eq (31), stated for `0 ≤ r ≤ 1`) is *reduced* here to a single isolated
+-- hypothesis, not proved: `betaMeasure_prod_abs_sub_le_of_mgf` carries `BetaProdMGFBound`
+-- explicitly, and `betaMeasure_prod_abs_sub_le_of_log2` is the unconditional trivial half
+-- (`α r² ≤ 8 log 2`).  Wiring it in closes no gap.  It is here so the two theorems and the residual
+-- node sit inside the root closure and are audited, rather than invisible behind a green gate — the
+-- defect `scripts/check_axioms.sh` documents for the former `TSDPP.BetaConcentration`.
+import TSDPP.Lemma5PaperRange

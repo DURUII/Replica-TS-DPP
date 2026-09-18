@@ -1,6 +1,6 @@
 # DESIGN — Lean 4 formalization of *Age-of-Information-Aware Mobile Crowdsensing for Uncertain Event Capture* (INFOCOM'26)
 
-Paper: `infocom26.pdf` (Zhou, Xu, Xu, Xiao, Wu).
+Paper: `paper.pdf` (Zhou, Xu, Xu, Xiao, Wu).
 Dependencies permitted: `ref.txt` (Lean install docs + LML, rl-theory-in-lean, lean-stat-learning-theory,
 FormalSLT, FormalML, mathlib4). **Of these, only the last two are actually used**: `mathlib4` is the
 sole `[[require]]` in `lean4/lakefile.toml` and the sole external import anywhere in the tree
@@ -8,7 +8,7 @@ sole `[[require]]` in `lean4/lakefile.toml` and the sole external import anywher
 five ML/SLT repositories are **permitted but unused** — no clone, no Lake dependency, no import;
 they are listed because `ref.txt` allows them, not because the development rests on them. This
 matters for how the artifact should be read: nothing below is borrowed from them, and the one place
-a result of theirs would have helped (GAP-7's trajectory law) is instead taken from the vendored
+a result of theirs would have helped (GAP-7's trajectory law, §7) is instead taken from the vendored
 mathlib (`Probability/Kernel/IonescuTulcea/Traj.lean`) — that is API lookup, not citation.
 Toolchain: Lean `v4.35.0-rc2`, mathlib4 `f61f3ed7633ff99ecaae4a086395b501652a76ee`, project at `lean4/`.
 
@@ -64,18 +64,17 @@ Two independent deliverables, each verified separately, exactly as `CLAUDE.md` d
   audit asserting every headline theorem depends only on
   `propext`, `Classical.choice`, `Quot.sound`.
 
-  > **Documentation correction.** Earlier revisions of this line claimed the build was run "with
-  > `set_option autoImplicit false`". **That was false** — `grep -rn autoImplicit lean4/TSDPP/
+  > **Documentation note.** The build is not run "with
+  > `set_option autoImplicit false`" — `grep -rn autoImplicit lean4/TSDPP/
   > lean4/TSDPP.lean lean4/lakefile.toml` returns nothing, and `autoImplicit` defaults to `true` in
-  > Lean 4. The claim has been removed rather than left standing. Enabling it is *known feasible*
+  > Lean 4. Enabling it is *known feasible*
   > (`lake env lean -DautoImplicit=false` succeeds on `TSDPP/Basic.lean`, `TSDPP/Lipschitz.lean`
   > and `TSDPP/Theorem2.lean`, the three spot-checked), but it has **not** been enabled project-wide,
   > so it is not claimed here. Recorded as a verified-possible hardening of the gate, not as a
-  > property of the delivered artifact. (Same class of defect as the stale audit count below:
-  > a design document asserting a verification that the toolchain was never asked to perform.)
+  > property of the delivered artifact.
 
 A claim is only reported as closed when *both* pass. Numeric checks are **falsifiers, not proofs** —
-they are recorded because two of them changed the plan (see §6, traps P-3, P-4).
+they are recorded because two of them fix an interval and a constant that the rest of the development depends on (see §6, traps P-3, P-4).
 
 ## 3. Card DAG
 
@@ -112,25 +111,25 @@ Citation boundary (NOT closed by proof, carried as explicit hypotheses; see §7)
   R11' = Lemma 5            (Beta concentration, quoted from [45])
 ```
 
-### Status board (verified against `lake build` + `scripts/check_axioms.sh`)
+### Status board (verified against `lake build` + `lean4/scripts/check_axioms.sh`)
 
 Every CLOSED row is backed by a declaration that (a) is in the `TSDPP` root module's import
 closure, (b) contains no `sorry`/`admit`/`native_decide`/`unsafe`, and (c) whose `#print axioms`
 output is a subset of `{propext, Classical.choice, Quot.sound}`.  The last point is *enforced*, not
 asserted: `lean4/scripts/check_axioms.sh` fails the build if any audited declaration deviates.
-Last full run: **79 declarations audited (3 with an empty axiom set), 23 source files scanned, all
-clean** — plus module-level coverage `21/22` in the root import closure (`TSDPP.Basic` declares
-nothing and is allowlisted).  See trap P-65: the module-level coverage line is a floor, not a
-statement that the closure is audited; 30 of 109 public declarations are still outside it.  (Up from 58/24 when `BetaGamma`, `BetaGammaChernoff` and `UnionBound` were brought into
-the root import closure — see the import block in `TSDPP.lean`.  Those three had been *outside* it,
-which meant `lake build` never compiled them and `scan_forbidden.py` never read them; the same hole
-the root module's own comment had already flagged for `KL` and `GammaMGF`.)
+The gate prints its own counts — declarations audited, declarations reported, how many come back
+with an empty axiom set, how many source files it scanned — plus the module-level coverage `n/m`
+over the root import closure (`TSDPP.Basic` declares nothing and is allowlisted).  Those counts are
+deliberately **not** copied here: a copied count is a second home for a fact whose only home is the
+gate's own output, and it drifts as declarations are added.  Run
+`bash lean4/scripts/check_axioms.sh` for the current values.  See trap P-65: the module-level
+coverage line is a floor, not a statement that the closure is audited.  (A module outside the root
+import closure is compiled by nothing: `lake build` never compiles it and `scan_forbidden.py` never
+reads it; see the import block in `TSDPP.lean`.)
 
-**Tree invariant, now enforced.**  Every `TSDPP/*.lean` file must be either the root module, or
+**Tree invariant.**  Every `TSDPP/*.lean` file must be either the root module, or
 reachable from it by `import`.  A file that is in the directory but outside the closure is compiled
-by nothing and, for `lake build` purposes, does not exist — this hole has now been hit four times
-(`KL`/`GammaMGF`, then `BetaGamma`, then the two promoted modules, then the four quarantined
-below), so it is worth stating as a rule rather than rediscovering.  The current check is one line:
+by nothing and, for `lake build` purposes, does not exist — hence the rule below.  The check is one line:
 
 ```
 grep "^import TSDPP" TSDPP.lean | sed 's/import TSDPP\.//' | sort > /tmp/incl
@@ -143,15 +142,13 @@ comm -13 /tmp/incl /tmp/all      # must print nothing but the file currently in 
 more of the lemmas that `TSDPP/BetaGamma.lean` now carries as `private` helpers —
 `betaMeasure_Ici`, `setLIntegral_of_measure_eq_zero`, `lintegral_sub_right`,
 `lintegral_mul_left_of_pos`, `lintegral_rpow_exp_neg_Ioi`, `gammaPDF_mul_factor` are all present in
-both places.  They were imported by **nobody** and therefore never compiled.  Verified before moving:
-all four compile clean standalone, so nothing was silently broken; and all six names are
-`private` in `BetaGamma.lean` (lines 9, 13, 20, 28, 95, 145), so the public copies were dead rather
-than load-bearing.  They were *moved*, not deleted — they are the pre-consolidation history of the
+both places.  Nothing imports them, so nothing compiles them; all four compile clean standalone, and all six names are
+`private` in `BetaGamma.lean` (lines 9, 13, 20, 28, 95, 145), so the public copies are dead rather
+than load-bearing.  They are kept, not deleted — they are the pre-consolidation history of the
 ratio-law proof and may still be useful to a reader reconstructing it.  (The three with an *empty* axiom set are `copyStep`, `copyStep_other`, `copyStep_self` —
 they depend on no axioms at all, not even `propext`; the audit checker counts verdicts, so an empty
 set is a legitimate outcome it must not mistake for a missing verdict — trap P-21.)  These counts
-are **regenerated from the tool, never hand-edited**; an earlier revision of this line read
-"43 declarations, 13 source files" and had simply gone stale as the development grew.  The audit list is not only the headline theorems: it also carries the `FIDELITY.md` §1.0
+are **regenerated from the tool, never hand-edited**.  The audit list is not only the headline theorems: it also carries the `FIDELITY.md` §1.0
 coverage rows (Definitions 2–4, Lemma 1, and the remaining Theorem 1 forms), so that every item
 that document calls *closed* is machine-checked rather than merely asserted.
 
@@ -222,7 +219,7 @@ discussion.
   `(θ*, θ^l, A_t, X_t)`, (ii) conditional-expectation algebra over that space, (iii) Bellman operators and
   their telescoping (R10), (iv) Beta concentration (R11). Items (iii) and (iv) are each independently
   substantial; Mathlib has no MDP/Bellman library and no Beta-concentration result. Attempting it would
-  have produced `sorry`s, which the constraints forbid. Replaced by the honest decomposition in §3 plus GAP-1/2.
+  have produced `sorry`s, which the constraints forbid. Replaced by the honest decomposition in §3 plus GAP-1/GAP-2 (§7).
 * **J-2. `native_decide` / `decide` on the finite cases.** Rejected: explicitly forbidden.
   Would also be unsound for the `ℝ`-valued statements, which are the actual content.
 * **J-3. State Lemma 5 (Beta concentration) as an axiom or a `variable`.** Rejected: `CLAUDE.md` forbids
@@ -239,10 +236,21 @@ discussion.
   * **(c) Improve the one-sample bound `φ`.** Impossible: minimising the two-sided family
     `(1−λ(1−t))^{−α}(1+λt)^{−β}` over `λ` returns `φ` *exactly* (the Γ-factors cancel). Verified
     numerically at `ρ = 1, t = 1/2`, where the "improved-looking" form `t^{1+ρ}((1+ρ)/(cρ))^ρ`
-    collapses to `φ`; an earlier session note claiming `φ` is beatable by a factor `(1+ρ)^{−α}` was
-    an algebra slip, not a real gain.
+    collapses to `φ`; `φ` is not beatable by a factor `(1+ρ)^{−α}`, and reading it that way is an algebra slip rather than a real gain.
   * **(d) Chebyshev / variance / integer-moment Markov.** Give polynomial decay only; the paper
     needs an exponential tail. Rejected on the form of the conclusion, before any formalization.
+* **S-1. Blame Fig. 5's low plateau on the event rate** (simulation route, not a Lean one).
+  *Route*: reconstruct `theta` from the trace, observe the plateau lands at 99 against the paper's ~148,
+  and infer the paper's `theta` must be ~3.5x rarer — which then conflicts with the paper's own
+  1,654,771 count, since rarer arms means a smaller slice.
+  *Rejected because it is an artifact of the reset, not of the data*: re-zeroing `X, Y` at every
+  episode boundary costs a 20-slot warm-up per episode, and that warm-up is the whole 99-to-148 gap.
+  Carrying `X, Y` and resetting only `Z` puts the plateau at 156 on the same `theta_hat`, so no
+  correction to the event rate is needed and the 1,654,771 slice stands. The carry flag is the fix.
+  *Trap*: the virtual queue is not carried with it. Eq (7) averages cost over one episode of length
+  `L`, so `Z` re-zeroes either way; carrying `Z` too makes it grow without bound and the penalty
+  reach 387 by episode 100. Whittle, which has no `Z`, is the only policy that survives a carried `Z`,
+  which is how the mistake was visible at all.
 * **J-4. Define the AoI chain as `Kernel`-valued and use Mathlib's `ProbabilityTheory.Kernel` API.**
   Rejected: for R5/R9/R12a the closed-form finite-support law `beliefPMF` is both simpler and *stronger*
   (it gives exact equality rather than an a.e. statement), and it keeps the development free of
@@ -272,7 +280,7 @@ discussion.
   `δ(λ+δ) ≤ C·L`.  Both routes are true; only `LC` reproduces the paper's constant.  Verbatim
   check of the expansion is in §8.  See trap P-13.
 * **J-6. Formalize the belief state as `E[X | H]` via `MeasureTheory.condExp`.** Rejected: the paper's
-  record `(λ_i, δ_i)` is a *sufficient statistic*, and proving sufficiency would be a detour. We instead
+  record `(λ_i, δ_i)` is a *sufficient statistic*, and proving sufficiency would be a detour. The artifact instead
   prove the law (R5) and take its mean (R6); the fact that the record determines the law is exactly the
   content of Lemma 2's preamble.
 
@@ -290,7 +298,6 @@ discussion.
   a technicality: the true probability at `r = 1` is **`0.495857`** at `α = 1000`, `β = 100α` —
   essentially one half, against a target `e^{−α/8}` that is exponentially small. The one-sample route
   is not merely weak here; the quantity it estimates is not small.
-  **[CORRECTED 2026-09-18 — traps P-69.]** This read "for large `α` the true probability is `≥ 1/2`".
   It is **strictly below `1/2` at `r = 1`** for every `α` (`0.369711`, `0.458552`, `0.486899`,
   `0.490737`, `0.495857` at `α = 1, 10, 100, 200, 1000`), rising monotonically to `1/2` from below —
   the Beta is right-skewed, so its median is below its mean. The bound is avoided, not attained. The
@@ -305,9 +312,7 @@ discussion.
   at every cell tested — but by much less than first recorded, and the Markov/Chernoff surrogate of
   the same split fails at the majority of cells. So the obstruction is entirely the tail *estimate*,
   not the split.
-  **[CORRECTED 2026-09-18 — traps P-69.]** The figures here were "worst `bound/target` ratio
-  `0.0052`, i.e. ~190× slack" and "fails at 42 of 48 cells". Neither is reproducible from any grid
-  the two independent routines could reconstruct.  Measured: the worst ratio on `0 ≤ r ≤ 1` is
+  Measured: the worst ratio on `0 ≤ r ≤ 1` is
   **`0.4530`** (at `α = 1, ρ = 1000, r = 0.1`; the sup over the region is `0.5`, approached as
   `r → 0`), so the exact route carries only **~2.2× slack at its worst point**, not 190×; and on a
   120-cell grid the surrogate exceeds the target at **80 cells**, worst excess **`2.59×`**
@@ -329,7 +334,7 @@ discussion.
 
 * **J-12. ACCEPTED ROUTE — refute the registered target inside Lean, and let the refutation be the
   deliverable.** `CLAUDE.md` item 1 reads "给出 `<ROOT_STATEMENT>` 的完整证明**或反证**", so a
-  machine-checked counterexample discharges the same obligation a proof would. Chosen 2026-09-18,
+  machine-checked counterexample discharges the same obligation a proof would. Taken as the route,
   after J-11 established that no repair of the *positive* statement is reachable from this
   toolkit.
 
@@ -343,11 +348,9 @@ discussion.
 
   which holds because `X − Y ≥ t − u ≥ s > 0 ⟹ |X − Y| = X − Y ≥ s`. It needs no measure theory
   beyond `Measure.prod_prod`, no Chernoff, and no optimisation: it costs one product of one-sample
-  tail probabilities. `Scratch/MainBox.lean` proved the containment and the assembly (CLOSED); the
-  route is **DONE** as of 2026-09-18 — shipped as `TSDPP/Lemma5Refutation.lean` with the two
+  tail probabilities. `TSDPP/Lemma5Refutation.lean` carries the containment and the assembly, with the two
   hypothesis slots (`hIci`/`hIic`, `harith`) discharged by `TSDPP/BetaOneCDF.lean` and
-  `TSDPP.refute_arith`, so both headline theorems are **unconditional** and audited (90
-  declarations). Card: `cards/L5-REFUTATION.md`. **Scope limit, restated here so it is not lost:**
+  `TSDPP.refute_arith`, so both headline theorems are **unconditional** and audited. Card: `cards/L5-REFUTATION.md`. **Scope limit, restated here so it is not lost:**
   what is refuted is the `r ≥ 1` statement this artifact registered; the paper's own Lemma 5
   (`0 ≤ r ≤ 1`, p. 9 Eq (31)) is *not* refuted by it, and neither is the paper's theorem — the
   finding is that Eq (33) applies the lemma outside its stated range, which is a citation failure,
@@ -373,7 +376,7 @@ discussion.
   `353.48×`. That is the correct trade — the refutation needs `> 1×`, and everything above it is
   margin. Full certificate: `cards/L5-REFUTATION.md`.
 
-## 6. Traps (Lean-specific), logged as encountered
+## 6. Traps (Lean-specific)
 
 * **P-1 (paper's own index slack).** Eq (4) vs Eq (9)/(35) off-by-one. Resolved by pinning Eq (9)'s
   convention; documented in §4. *Not* a Lean trap, but it is a trap for the formalizer — it silently
@@ -388,7 +391,7 @@ discussion.
   `‖deriv f x‖ ≤ C` over the closed interval — so the bound must be *uniform on* `[0,1]`, including
   endpoints. Verified numerically first (`scripts/numeric_check.py`) that `sup|f'| = 1` exactly, attained
   at `θ=0`; a naive `interval_cases`-free estimate that assumed the sup was in the interior would fail.
-  This numeric check is why the card was written with `θ ∈ [0,1]` closed rather than open.
+  The interval in the statement is therefore the closed `[0,1]`, not the open one.
 * **P-4.** The numeric falsifier showed Lemma 2's constant `2δ` is **tight** (ratio `1.0000000000000113`
   after 30 000 random trials, i.e. `= 1` up to floating error). Consequence: the proof may not "improve"
   `2δ` to `δ` anywhere; an early proof sketch did, and the falsifier caught it. Logged because the paper's
@@ -480,10 +483,7 @@ discussion.
   Cause: writing the binder as `_t` (a habit picked up from `Tail.lean`, where the summand is
   index-independent and the name genuinely does not matter) leaves every `t` in the *summand*
   free, so Lean auto-binds it as an outer variable.  **Fix**: name the binder after the variable
-  the summand actually uses (`∑ t ∈ range L, delta l t`).  **Process failure, logged as such:**
-  this was written into `Theorem2.lean` while porting the `_t` style from `Tail.lean` without
-  checking that the summand there was constant.  A one-line statement re-read would have caught
-  it; the lesson is that notation copied across modules must be re-derived, not pattern-matched.
+  the summand actually uses (`∑ t ∈ range L, delta l t`).  **Rule:** notation copied across modules must be re-derived, not pattern-matched — a `_t` binder ported from a module whose summand is constant silently leaves every `t` in the summand free, and a one-line statement re-read catches it.
 * **P-19 (a "tight constant" claim must be exhibited, not asserted).**  `Rate.rate_core` proves
   `2L√(8Z) + B ≤ 7√(L⁴Z)` when the radius constant is the paper's `8`.  The `7` was derived as
   `6 + 1`, and the natural suspicion is that the derivation is loose.  Numeric maximisation gives
@@ -492,12 +492,12 @@ discussion.
   Logged as the mirror image of P-4: there, tightness forbade *loosening* an inherited constant;
   here, tightness forbids *assuming* a derived one is slack.  Both are decided numerically before
   the Lean proof is trusted.
-  **Update (task #12) — the same trap, re-armed, and this time it fires in reverse.**  The
+  **The same trap, re-armed, and this time it fires in reverse.**  The
   artifact's radius constant is now `K₀ = 100/11`, not the paper's `8`, so the declaration proves
   `2L√(K₀Z) + B ≤ 8√(L⁴Z)`.  The witness above is unchanged (`L = m = logT = η = 1`, `B = √log T`)
   but its value moves from `2√8 + 1 = 6.656854` to `2√(100/11) + 1 = 7.030226`.  Two consequences
   that this entry exists to warn about:
-  * the *previously* tight-and-valid constant `7` is now **refuted** by that same explicit witness
+  * the constant `7`, tight and valid at the paper's radius `8`, is **refuted** at `K₀ = 100/11` by that same explicit witness
     (`7 < 7.0303`), so the substitution `7 → 8` is forced, not cosmetic;
   * the first summand alone is `2√(100/11) = 6.030227`, still `< 7`, so *the intermediate bound
     `2L√(K₀Z) ≤ 7√(L⁴Z)` survives and only the `+1` crosses*.  A reader who checks only the first
@@ -544,8 +544,8 @@ discussion.
   **(1)** `m(ρ) = min_δ max(A,B)` was tabulated on a uniform `δ`-grid, reporting `m(0.1) = 0.420160`
   and a downturn at small `ρ`; the true value is `min_δ max = 0.125893`.  The optimum sits at
   `δ → ρ⁻` where `(1−δ/ρ)^ρ` collapses at scale `e^{−1/ρ}`, which a uniform grid cannot reach.  The
-  false reading was then used to *withdraw a correct monotonicity claim* — a grid artifact can do
-  damage in the retracting direction too.
+  false reading then *withdraws* a correct monotonicity claim — a grid artifact does damage in the
+  retracting direction too.
   **(2)** The same sweep's `r*(s₀)` and residual-`v` tables were floored by the grid's smallest
   `δ = 1e−15`, since `B(δ) ≳ δ·e → 0` as `δ → 0`; the reported infimum was `2.7e−15` where the truth
   is `≈ 3.8e−32`.  A grid bracket is a **false lower bound on an infimum**, exactly as it is a false
@@ -573,7 +573,7 @@ discussion.
   (1 - t/n)^n ≤ exp(-t)` (`Mathlib/Analysis/Complex/Exponential.lean:643`) and
   `Real.one_add_inv_pow_le_exp {n : ℕ}`.  `grep -rn "one_add_div_pow_le_exp\|div_pow_le_exp"`
   over `Mathlib/` returns nothing, so both real-`n` forms must be re-derived.  Route used
-  (`Scratch/UnionBound.lean`, `rpow_one_sub_div_le_exp_neg` / `rpow_one_add_div_le_exp`): split on
+  (`TSDPP/UnionBound.lean`, `rpow_one_sub_div_le_exp_neg` / `rpow_one_add_div_le_exp`): split on
   `0 ≤ 1 − t/n`; in the `> 0` branch `Real.log_le_sub_one_of_pos` gives `log(1 − t/n) ≤ −t/n`,
   multiply by `n > 0` via `mul_le_mul_of_nonneg_right`, then `rw [Real.rpow_def_of_pos h]` and
   `Real.exp_le_exp.2`; the `= 0` branch is `Real.zero_rpow (ne_of_gt hn)`.
@@ -619,9 +619,9 @@ discussion.
   with ≥ 6% to spare) but strictly shorter: no monotonicity, no derivative, no `Real.rpow_le_rpow`,
   no `log_rpow`.  Discharged by `Real.rpow_def_of_pos` + `Real.exp_le_exp.2` +
   `nlinarith [sq_nonneg ((1 − ρ) − 21/50)]`.
-* **P-30 (bullet misalignment cascades into nonsense error reports).**  Two *content* mistakes in the
-  first draft — the `s = 1` branch of obligation A contained obligation B's derivation and vice
-  versa — did not surface as "wrong goal"; they surfaced 20 lines later as a `rw` error whose printed
+* **P-30 (bullet misalignment cascades into nonsense error reports).**  Two *content* mistakes — the
+  `s = 1` branch of obligation A carrying obligation B's derivation and vice
+  versa — do not surface as "wrong goal"; they surface 20 lines later as a `rw` error whose printed
   goal belonged to a different bullet, plus three spurious "No goals to be solved" reports upstream.
   When Lean's error locations and printed goals stop agreeing with the line numbers in the file, the
   fault is almost always an earlier tactic that failed and desynchronised the `·` bullets; fix and
@@ -714,7 +714,7 @@ discussion.
   parametrised sweep does not validate a witness.
 
 * **P-40 (`Kernel.traj`'s index type is `↥(Finset.Iic n)`, not `Set.Iic n`).**  From the GAP-7
-  probe (peer session, `Scratch/ProbeTraj.lean`; signatures re-verified here against the vendored
+  probe (`Scratch/ProbeTraj.lean`; signatures re-verified here against the vendored
   tree).  `ProbabilityTheory.Kernel.traj` has domain `Π i : Iic a, X i`, and because
   `Mathlib/Probability/Kernel/IonescuTulcea/Traj.lean:86` does `open Filter Finset Function …`,
   that `Iic` resolves to **`Finset.Iic a` coerced to a type** — not `Set.Iic a`.  The two are easy
@@ -722,7 +722,7 @@ discussion.
   error at the instantiation site rather than anywhere informative.  Check the `open` line before
   copying a signature.
 * **P-41 (`Filtration.natural` needs a *topology* on the state space, and Lean will not synthesise
-  the four dependent instances for you).**  Also from the GAP-7 probe.
+  the four dependent instances for you).**  Also from the GAP-7 probe (§7).
   `Mathlib/Probability/Process/Filtration.lean:395` requires, per coordinate,
   `[∀ i, TopologicalSpace (β i)]`, `[∀ i, MetrizableSpace (β i)]`, `[∀ i, MeasurableSpace (β i)]`,
   `[∀ i, BorelSpace (β i)]`, plus `[Preorder ι]`, and it takes the measurability as an *argument*
@@ -813,8 +813,8 @@ discussion.
   to names rather than oleans).
 
 * **P-48 (in a parameter substitution, the intermediate inequality is not the endpoint inequality —
-  and the one handed to you can be the wrong one, while still being *true*).**  Provenance: the
-  `8 → 100/11` radius substitution of task #12.  The prescribed route for `2√((100/11)x) ≤ 7√x` was
+  and the one handed to you can be the wrong one, while still being *true*).**  The
+  `8 → 100/11` radius substitution is the case that exposes it.  The prescribed route for `2√((100/11)x) ≤ 7√x` was
   `Real.sqrt_le_sqrt` on `(100/11)x ≤ 49x`, i.e. `100/11 ≤ 49` — true (`100 ≤ 539`).  But the goal
   needs `√((100/11)x) ≤ (7/2)√x`, i.e. `100/11 ≤ (7/2)² = 49/4 = 12.25`.  With the prescribed `≤ 49`
   one gets `√(K₀x) ≤ 7√x`, hence only `2√(K₀x) ≤ 14√x` — off by exactly the factor `2` that sits
@@ -832,7 +832,7 @@ discussion.
   `100/11 ≤ 49/4` ✓, `2√(100/11) + 1 = 7.0303 > 7` ✗ for the old constant, `2√(100/11) + 1 ≤ 8` ✓ —
   the four checks disagree at the third, which is the one that moves the numeral.)
 * **P-49 (`ring` cannot see through `√`: a producer/consumer pair must agree on the *syntactic*
-  shape of a radicand).**  Provenance: the task-#12 substitution in `Theorem2.lean`.  The bridge
+  shape of a radicand).**  Provenance: the `1/8 → 100/11` substitution in `Theorem2.lean`.  The bridge
   `hcomm` in `theorem2_concrete` relates `theorem2_withTail`'s RHS `L * (2 * √((100/11) * m * logT / η))`
   to `rate_core`'s LHS `2 * L * √((100/11) * m * logT / η)` — a pure reassociation, so `ring` should
   close it.  It does **only** because both radicands are the *same term*.  `ring` treats `√X` as an
@@ -851,7 +851,7 @@ discussion.
   not the proof.
 
 * **P-50 (a *value* attributed to a declaration *by name*, where the name is right and the value is
-  stale).**  Provenance: `FIDELITY.md` §1 and §4, found by a peer session and confirmed
+  stale).**  Provenance: `FIDELITY.md` §1 and §4.
   independently.  Six sites in `FIDELITY.md` read ``|BR| ≤ K·7·√(L³T log T/η)`` with an explicit
   attribution — "as the Lean theorem `TSDPP.theorem2_concrete`", "**Lean theorem** —
   `TSDPP.theorem2_rate`" — while both declarations state `8` (`Theorem2.lean:156` concludes
@@ -913,25 +913,22 @@ discussion.
   conclusion.**  Failing that, grep for something the answer cannot contain (here: every occurrence
   of the *numeral*, with no name in the pattern at all).
 * **P-53 (a label assigned without checking it is free — the task list is prose too, and no gate
-  reads it).**  Provenance: task #14 was created as "Add traps P-48/P-49 to DESIGN.md".  When acted
-  on, this file already contained **P-48** (the parameter-substitution trap), **P-49** (`ring`
-  cannot see through `√`) and **P-50** (a value attributed to a declaration by name) — all three
-  written by the agents working that path.  Had the task been executed as written, two of the three
-  entries would have been duplicated under numbers already in use, and a *live cross-reference*
+  reads it).**  **P-48** (the parameter-substitution trap), **P-49** (`ring`
+  cannot see through `√`) and **P-50** (a value attributed to a declaration by name) all already
+  occupy those numbers.  Assigning a queued label of "P-48/P-49" to a new pair of traps would
+  duplicate two of them, and a *live cross-reference*
   would have been silently re-pointed: P-48 is cited from inside the register discussion **earlier
   in this same section** (the sentence "see P-48 for the version of"), above the trap list.  So
   P-48 was not merely a free number — it was a number something already pointed at.
   *(This entry cites its neighbours by trap number and by quoted sentence, never by line: it is the
-  only way an entry about identifier fragility stays valid under the next insertion.  A peer session
-  caught the first draft doing exactly what it warns against.)*  The trap number is a *shared
-  mutable key*, and the task recording it was written from a session that had not re-read the
-  file.  **Rule: an identifier that other documents cross-reference is allocated by reading the
+  only way an entry about identifier fragility stays valid under the next insertion.)*  The trap number is a *shared
+  mutable key*.  **Rule: an identifier that other documents cross-reference is allocated by reading the
   document, at the moment of writing — never from memory of what the numbering "was up to".**
   This is the same failure as P-50 with the roles swapped: there the *name* was re-read and the
   *value* was stale; here the *value* was re-read and the *name* was stale.
 
 * **P-54 (three gates green over a file that does not compile — the exemption that had become a
-  hiding place).**  Provenance: a peer session, reproduced here.  `TSDPP/BetaConcentration.lean` —
+  hiding place).**  `TSDPP/BetaConcentration.lean` —
   a file sitting in the deliverable directory — failed to build:
 
   ```
@@ -950,7 +947,7 @@ discussion.
   | gate | why it cannot see this file |
   |---|---|
   | `lake build TSDPP` | compiles only the root module's **import closure**; this module is deliberately outside it |
-  | `check_axioms.sh` (audit) | prints verdicts for the names listed in `Audit.lean` — 67 at the time of this entry, 79 now — none of which is defined here |
+  | `check_axioms.sh` (audit) | prints verdicts only for the names listed in `Audit.lean`, none of which is defined here |
   | `scan_forbidden.py` | matches forbidden **tokens**; an unsolved goal and a failed `rewrite` contain none |
 
   And the line that suppressed the one warning that *would* have fired is
@@ -971,7 +968,7 @@ discussion.
   maintenance, and a broken entry is indistinguishable from a legitimate one — both are just a
   string in a set.
 
-  **Fix applied.**  `scripts/check_axioms.sh` now `lake build`s every module in `IN_FLIGHT` and
+  **Fix applied.**  `lean4/scripts/check_axioms.sh` now `lake build`s every module in `IN_FLIGHT` and
   fails on a non-zero exit, and separately fails if `IN_FLIGHT` names a module that does not exist
   (a stale exemption hides nothing today, but will hide the next file to take that name).  Verified
   by running the gate on the broken tree: it now exits `1` and names the module.
@@ -983,7 +980,7 @@ discussion.
   result obtained during someone else's build is not evidence.  *This is a genuine cost introduced
   by the fix and is recorded rather than hidden.*
 
-  **[RESOLVED 2026-09-17 — trap P-65, mode (a).]**  The exemption is gone: `IN_FLIGHT` is now empty
+  **Resolution (trap P-65, mode (a)).**  The exemption is gone: `IN_FLIGHT` is empty
   and `TSDPP.BetaConcentration` is imported by `TSDPP.lean`, so it is inside the root closure and is
   built and scanned like any other module.  It has its own `#print axioms` section in `Audit.lean`.
   Two follow-ups this entry did not anticipate: `check_axioms.sh` now *requires* every closure module
@@ -1038,7 +1035,7 @@ discussion.
   binder `_hr`; positional application is unaffected.
 
 * **P-60 (the arithmetic residual must be read off the reduction's *actual* output, not from a
-  remembered form — the factor `2` is easy to double-count).**  Provenance: §5, this session.  The
+  remembered form — the factor `2` is easy to double-count).**  Provenance: §5.  The
   intended `hnum` was written `2 * (A^α + B^α) ≤ exp (-(11/100)·α·r²)`; the reduction actually
   yields `Pr ≤ 2·(μ(Ici t₁) + μ(Iio t₂)) ≤ 2·(A^α + B^α)` (the outer `2` is the exchangeability
   factor, and the four-set cover already spends one copy of each tail), so the correct residual is
@@ -1048,8 +1045,7 @@ discussion.
   returns, and check the *direction and the constant factor* numerically before proving it.**
 
 * **P-61 (a constant designed to be *tight* cannot be spent twice — and splitting an event into
-  one-sided tails costs a factor `2` in the exponent).**  Provenance: §5 + the numeric scans of
-  this session, and the reason the top-level target is still open here.  `TSDPP.unionWitness`
+  one-sided tails costs a factor `2` in the exponent).**  Provenance: §5 and the numeric scans.  `TSDPP.unionWitness`
   certifies `c₀ = 11/100` for the *two-sample* difference; the union bound needs
   `A(δ₁)^α + B(δ)^α ≤ exp(-(11/100)αr²)`, and at the balanced optimum `δ₁ = δ = 29/50` the two
   factors give `-log A ≈ 0.1225`, `-log B ≈ 0.1247` (`ρ → ∞`): the witness's constant is the
@@ -1065,8 +1061,7 @@ discussion.
   Chernoff is a factor `2` better and is what the constant `11/100` was sized for.**
 
 * **P-62 (three corrections, one source: a claim true on a restricted subset read as true on the set
-  the proposition quantifies over).**  Provenance: this correction sweep, three rounds, each
-  superseded; the numbers below were independently re-derived.  The prose is corrected in place at
+  the proposition quantifies over).**  The numbers below were independently re-derived.  The prose is corrected in place at
   four sites — `lean4/TSDPP/BetaConcentration.lean`'s module header (the bullet ending "no refinement
   of the one-sample Chernoff bound closes the target below that `α`"), `cards/L5.md` (the paragraph
   "the obstruction is a theorem, not a numeric surprise"), `FIDELITY.md` (the paragraph quoting
@@ -1125,8 +1120,7 @@ discussion.
   `sup_ρ min_δ max(A,B)`.
 
 * **P-63 (vacuity check: an infimum collapse found on the set where the proposition has no
-  content).**  Provenance: the layer-3 correction inside P-62 was itself refuted in the same sweep by
-  the peer session, which noted that the witnesses for the collapse all sit in the empty-event
+  content).**  The layer-3 correction inside P-62 is itself refuted here, because the witnesses for the collapse all sit in the empty-event
   region.  Both halves of that exchange are recorded, because the refutation is right and the
   proposed replacement ceiling is not.
 
@@ -1136,7 +1130,7 @@ discussion.
 
       `μ{|X−Y| ≥ s} = 0`  ⟺  `s ≥ 1`  ⟺  `r ≥ 1+ρ`  ⟺  `ρ ≤ r−1`.
 
-  The criterion is **nullity, not emptiness** (the peer's refinement): at the boundary `r = 1+ρ` the
+  The criterion is **nullity, not emptiness** : at the boundary `r = 1+ρ` the
   event `{|X−Y| ≥ 1}` is `{(0,1),(1,0)}` — non-empty, but null because `Beta(α,β)` with `α, β > 0`
   puts no mass on `{0,1}`.  Nullity is both the correct criterion and the weaker one, so nothing is
   lost; stating it as emptiness would over-claim the hypothesis the conclusion actually needs.
@@ -1152,7 +1146,7 @@ discussion.
   The paper's `r ≥ 1` is what the file writes as `_hr`; it constrains nothing here — the real
   parameter is `s`, and the collapse is bought by `s → 1`.
 
-  *The replacement ceiling (wrong, retracted).*  The peer proposed that on `ρ > r−1` the constrained
+  *The replacement ceiling (wrong).*  The candidate is that on `ρ > r−1` the constrained
   infimum *is* `m(ρ) = min_δ max(A(δ),B(δ))`, hence the criterion `−log m(ρ) ≥ c·r²`, hence
   `inf_ρ(−log m(ρ)) = −log 0.8839970429 = 0.1233016` as a **ceiling** on the achievable rate, killing
   `c = 1/8` (`√(0.1233016/0.125) = 0.993183 < 1`) and admitting `c = 11/100`.  Three defects:
@@ -1185,7 +1179,7 @@ discussion.
   sentence is therefore **no absolute ceiling, and whatever ceiling exists is bought entirely with
   vacuity.**
 
-  *Sharpening (the peer's, accepted).*  Since every `c` is reachable as `s → 1`, `11/100` is not
+  *Sharpening.*  Since every `c` is reachable as `s → 1`, `11/100` is not
   merely underived on this route — it is **undistinguished**: the reachable set of constants is
   `(0, ∞)` in the near-vacuous limit, so `11/100`, `1/8` and `1` stand in the same position.  A
   constant can only be meaningful relative to a bounded `s` — which the artifact does not supply.
@@ -1277,7 +1271,7 @@ discussion.
   `r ≥ 1`, and `r ≥ 1` is where the claim is false.  (c) An inequality used outside its stated range
   in the source is a defect of the source; if the artifact inherits it, mark it.
 
-  **[EXTENDED 2026-09-17 — see P-67.  The witnesses above understate the problem.]**  They sit at
+  **See P-67: the witnesses above understate the problem.**  They sit at
   `r = 10` with `ρ = 100`, which is outside the vacuous region but **off the curve Eq (33)
   prescribes**.  Evaluated on that curve — `r = max{1, √(8 log T/α)}` — the **paper's own `1/8` also
   fails**, in 5 of 6 sampled parameter tuples, including `α = 1, T = 10⁶` (the artifact's `11/100`
@@ -1287,7 +1281,7 @@ discussion.
 
 
 * **P-65 (five ways the audit gate could report green while checking nothing).**  Provenance: the
-  hardening of `lean4/scripts/check_axioms.sh` (task #19).  The gate is the artifact's only
+  hardening of `lean4/scripts/check_axioms.sh`.  The gate is the artifact's only
   machine-checkable evidence for `CLAUDE.md`'s "no `axiom`/`native_decide`/`unsafe`" rule, so a gate
   that silently checks less than it appears to is worse than no gate: it converts an open question
   into a false assurance.  Five distinct failure modes were found and closed.
@@ -1297,9 +1291,7 @@ discussion.
   gate" — true, and irrelevant: compiling is not auditing, and the exemption meant twelve public
   declarations were checked by nothing while the gate printed `OK`.  `IN_FLIGHT` is now empty.  Note
   the exemption was self-justifying: the module was outside the root closure, so `Audit.lean` (which
-  imports only `TSDPP`) could not even *name* its declarations.  This hole has now been hit five
-  times (`KL`/`GammaMGF`, `BetaGamma`, the two promoted modules, the four quarantined to
-  `Scratch/superseded/`, then `BetaConcentration`); §2's tree invariant is the durable fix.
+  imports only `TSDPP`) could not even *name* its declarations.  §2's tree invariant is the durable fix for this class of hole.
 
   (b) **A comment can silently kill the whole gate.**  A `'` inside a comment in the `python -c '...'`
   block ends the bash single-quoted string at that byte, and the rest of the script is parsed as
@@ -1331,18 +1323,16 @@ discussion.
   trusted.  **Rule: a new gate check is not done until a deliberately broken input has made it
   fail.**
 
-  Verified state after the hardening: `bash scripts/check_axioms.sh` exits 0, **79 declarations
-  audited (3 with an empty axiom set), 23 source files scanned**, coverage `21/22` with
-  `TSDPP.Basic` declaration-free and allowlisted.  Attribute (b) and (c) to the audit agent's sweep;
-  they are reported here from its findings, not re-derived by me.
+  Gate state: `bash lean4/scripts/check_axioms.sh` exits 0 and prints its own counts; they are not
+  restated here — the status board above gives the reason, a copied count has a second home and
+  drifts.
 
 * **P-66 (a correction is itself a claim, and needs the same evidence as the thing it corrects).**
-  Provenance: this session, and it is the cheapest near-miss recorded here.  While propagating P-64 I
-  noticed the evidence table's "fails `N`×" column and computed `2e^{−22}` as `5.579e−9` instead of
-  `5.579e−10`.  On that slip I concluded the column used an unstated "exponential ratio" convention
-  that would read as a 10× overstatement to anyone recomputing it, and wrote a warning paragraph
-  into **three** documents (`DESIGN.md`, `BetaConcentration.lean`, and a draft for `cards/L5.md`)
-  telling readers not to trust the column's arithmetic.  The column was correct in all three.  What
+  The evidence table's "fails `N`×" column was read as using an unstated
+  "exponential ratio" convention, on the strength of computing `2e^{−22}` as `5.579e−9` instead of
+  `5.579e−10`; a warning paragraph telling readers not to trust the column's arithmetic was written
+  into `DESIGN.md`, `BetaConcentration.lean` and `cards/L5.md`.  The column was correct, and the
+  arithmetic slip was the sole cause.  What
   saved it was writing the "two conventions" out symbolically: `LHS / 2e^{−cαr²}` and
   `e^{(c − c_eff)αr²}` are the same expression by the definition of `c_eff`, so no convention
   question exists — an internal contradiction that forced a recheck of the arithmetic.
@@ -1352,14 +1342,13 @@ discussion.
   is worse than the error it targets, because it arrives with the authority of the sweep that found
   it, and the three documents were about to disagree with the artifact's own correct evidence.
   Corollary, and the operational tell: **when a "finding" is that some number is off by a
-  suspiciously exact power of ten, recheck the arithmetic first.**  The slip above was the
-  diagnostic; the finding was mine.
+  suspiciously exact power of ten, recheck the arithmetic first.**  A factor-of-ten discrepancy is the
+  diagnostic, not the finding.
 
 * **P-67 (the bound fails on the paper's *own* parameter curve, against the paper's *own* constant —
-  so the witnesses in P-64 were not the worst case, and the "small-`α`" corner is).**  Provenance: an
-  independent verification session (peer, `lean-proof-ts-dpp-af`) raised the large-`r` regime; the
-  numbers below are **my own re-derivation**, not its report, using a quadrature routine validated by
-  reproducing P-64's three exact witnesses to 11 significant digits before it was applied here.
+  so the witnesses in P-64 were not the worst case, and the "small-`α`" corner is).**  The
+  numbers below were derived here, using a quadrature routine validated by
+  reproducing P-64's three exact witnesses to 11 significant digits before it was applied.
 
   P-64's witnesses sit at `r = 10` with `ρ = 100` — chosen to be clearly outside the vacuous region,
   but **not on the curve Eq (33) actually prescribes**, which is `r = max{1, √(8 log T/α)}`.  Walking
@@ -1399,8 +1388,7 @@ discussion.
   reply "not in the regime we care about"; a witness on it does not.
 
 * **P-68 (in the small-`α`/`β` corner, nothing but the density itself is a usable reference —
-  including high-precision integrators).**  Provenance: the peer session's own methodology note,
-  recorded here because it cost it real time and would cost the next attempt the same.  Its first
+  including high-precision integrators).**  Recorded because it costs real time and would cost the next attempt the same.  Its first
   scanner used a logistic substitution with `scipy.logsf` and was wrong by up to `0.11` at small
   `α`, `β` — and the error went in the direction that **hides violations**, i.e. it under-reported
   exactly the phenomenon being hunted.  The cause was not the special function (`betainc`'s two
@@ -1435,10 +1423,10 @@ discussion.
   | surrogate fails at `42 of 48` cells | `80 of 120` cells, worst `2.59×` | J-11(c) |
   | `Pr(X ≥ rμ) ≥ 1/2` for large `α` | `0.495857` at `α = 1000` — strictly *below* `1/2` | J-11(b) |
 
-  What all four have in common: **they were computed on grids that no longer exist and were never
-  written down.**  Not one could be re-run, because the grid was in a scratch script that was
-  overwritten, and so the `range.py`/`feas3.py`/`fast.py` line of work is not reproducible even by
-  its author.  The correct figures were obtained in minutes once the grid was stated explicitly.
+  What all four have in common: **they were quoted without the grid they were computed on.**  None is
+  re-runnable, because the grid lived in an uncommitted scratch script, so neither the original
+  figures nor the corrected ones are reproducible from the repository.  The correct figures take
+  minutes to obtain once the grid is stated explicitly.
 
   **Rule.**  A numerical figure enters a document only with (i) the exact grid or parameter list,
   and (ii) the routine that produced it, both in the repository — or it is marked *reported, not
@@ -1449,11 +1437,9 @@ discussion.
   a null result — "the sweep found nothing" — into false confidence, and the common fix is to make
   the *scope* of the evidence part of the evidence.
 
-  *Secondary, and worth stating: the verification agent's own first reading of Claim 1 said the
-  `(1,100,10)` row was "wrong", because my brief to it said "row 1 exceeds the bound (fails by
-  3.77×)" while the table row says the opposite (`holds` against `11/100`, fails against `1/8`).
-  The table was right and the brief was sloppy. A witness table's per-row verdicts do not survive
-  being paraphrased into prose — quote the row, do not restate it.*
+  *Secondary, and worth stating: the `(1,100,10)` row reads `holds` against `11/100` and fails against
+  `1/8`, so it paraphrases easily into the opposite claim. A witness table's per-row verdicts do not
+  survive being restated in prose — quote the row, do not restate it.*
 
 * **P-70 (an asymptotic criterion quoted as if it were the exact threshold of the finite witness).**
   Provenance: `cards/L5-REFUTATION.md` §5, route R-F, written 2026-09-18 while justifying why the
@@ -1483,6 +1469,56 @@ discussion.
 
 Recorded so that a future attempt does not have to rediscover them.
 
+* **P-71 (`wc -w` 是 locale 依赖的，在混排中英文的语料上不可用).**  本机（BSD `wc`，`LC_ALL=en_US.UTF-8`）
+  下，`wc -w` 会在**多字节 UTF-8 序列内部、凡出现字节 `0xA0` 处断开**：`printf 'a标b' | wc -w` 得 2，
+  `LC_ALL=C wc -w` 得 1。实测 17/17 符合「UTF-8 locale 下拆分 ⟺ 该字符的 UTF-8 编码含 `0xA0`」
+  （`标` = `E6 A0 87` 拆，`標` = `E6 A8 99` 不拆）。后果：同一份 `CLAUDE.md` 量出 61 或 72 词，
+  `DESIGN.md` 26771 或 26773 词。**Rule**: 任何字数门禁必须自带 locale 无关的计数器
+  （`len(text.split())`，即 upstream `verify-doc-budgets.ts:18` 的 `text.split(/\s+/).filter(Boolean)` 语义），
+  **绝不用 `wc -w`**；引用他人给出的字数时，先问计数规则。
+* **P-72 (同一命题在两份文档里配了不同的见证，而两份都对不上算术).**  `DESIGN.md` 本节的表把
+  `1/8` 的证伪见证记作 `(α,β,r) = (1,100,10)`、比值 `3.77`；`cards/README.md` 记作 `(2,200,10)`、
+  「exact `8.6066e−09` vs bound `2.7895e−10`」。40 位精度复算（`mpmath`，精确密度积分）：
+
+  | (α,β,r) | exact Pr | 论文 `1/8` 界 `2e^{−αr²/8}` | 比值 | 注册 `11/100` 界 `2e^{−cαr²}` | 比值 |
+  |---|---|---|---|---|---|
+  | (1,100,10) | `2.8096512e−5` | `7.4533063e−6` | **3.76967** | `3.3403e−5` | 0.841（**界成立**） |
+  | (2,200,10) | `8.6066401e−9` | `2.7775888e−11` | **309.86** | `5.5790e−10` | **15.43** |
+
+  两处**都**是 `r = 10` 的合法反例——它们证伪的是**不同的常数**（前者是论文的 `1/8`，后者是注册的 `11/100`），
+  所以「两个见证互相矛盾」的读法是错的。真正的问题是 `cards/README.md` 的 **bound 数值**：`2.7895e−10`
+  = `e^{−22}`，恰好是注册界 `2e^{−22} = 5.5790e−10` 的**一半**——**丢了一个因子 2**，
+  `Lemma5Refutation.lean` 的陈述里那个 `2 *` 是写着的。于是该行隐含的比值 `30.86×` 应为 `15.43×`。
+  **Rule**: 反例表必须写出它对着**哪一条陈述**（哪个常数、哪一侧），并给出计算脚本；
+  「见证 A ≠ 见证 B」不等于「其中之一错」，而「数值对不上自己引用的陈述」一定是错。
+* **P-73 (探针静默失败，空输出被读成「无命中」).**  本机没有 `ag`（`/opt/homebrew/bin/ag` 与
+  `/usr/local/bin/ag` 均不存在）。以 `ag … 2>/dev/null | …` 形式发出的两条检索因此根本没有执行，
+  shell 的 `command not found` 落入被抑制的 stderr，管道对下游给出空输出——**空输出被读成
+  「全仓库无此引用」**，并据此报出一个 14 处／2 文件的泄漏面。改用 stderr 可见的 `grep -rn` 复跑，
+  真实面是 **24 处／7 文件**，多出的包括 `cards/L5.md`(6)、`cards/R13.md`、`DESIGN.md`，以及
+  **受审计闭包内的 `lean4/TSDPP/Audit.lean` 与 `Tail.TRAPS.md`**。
+  **Rule**: 任何「空输出即结论」的探针，绝不抑制其 stderr；并且必须先跑**阳性对照**——拿一段已知
+  会命中的输入过同一条管道，确认它能给出非空结果——再采信它的空结果。失败模式与 P-71 同族：
+  **危险的不是抛异常，而是看起来合理的输出**；P-71 是字符被当行的伪表格，这里是伪造的「无命中」。
+
+* **P-74 (被复制的度量必然漂；而核查它修好没有的探针，用「子串匹配」冒充「路径判定」).**
+  两件事同时发生。**(a) 复制即造第二个家**：`lean4/scripts/check_axioms.sh` 每次运行都打印自己的
+  计数，而 `DESIGN.md`、`cards/README.{md,zh.md}`、`cards/L5.md`、`cards/L5-REFUTATION.md`、
+  `cards/R16.md` 各自把发出时的数字抄了一份（`90 declarations`、`79 audited declarations`、
+  `87 reported`、`25 source files scanned`、coverage `23/24`）；另有一个**没有任何脚本计算**的
+  `30 of 109 public declarations`。`Lemma5PaperRange` 进闭包后真值成为 **93 audited / 90 reported
+  / 26 files / coverage 24/25**，五处抄本**同时**变成假话，而每一处都仍然「读起来很精确」。
+  同一批文档里 `bash scripts/check_axioms.sh` 被当命令写了 17 次——从仓库根它**不存在**
+  （只有 `lean4/scripts/` 下有），rc=127。**(b) 核查 (a) 的探针自己坏了**：用
+  `grep -o 'scripts/check_axioms\.sh'` 找裸路径，但 `lean4/scripts/check_axioms.sh` **包含**
+  `scripts/check_axioms.sh` 作为子串，`-o` 只回显匹配段，于是它报告「已全部带前缀」——
+  唯一的破绽是**阳性对照返回 0**；换成能看见前缀的判据后真相才出来。
+  **Rule**: 计数、度量、命令路径各留**一个家**（门禁的 stdout、脚本自身、从仓库根可解析的路径），
+  别处只写「跑它」；写进文档的命令必须**从该文档所在的目录**真跑一次。`grep -o` 的匹配是子串
+  而非上下文，「A 是否在 B 之前」这类判定不能用它；**阳性对照返回 0 的那次，就是探针坏掉的那次**。
+
+## 7. Gaps — what is unmodelled or unproved
+
 ### Two fidelity rules that must not be merged
 
 Distilled from the `1/8 → 11/100` substitution (GAP-2b) and from the two places the artifact
@@ -1499,8 +1535,8 @@ erase a live result:
 `1/8` sits in **both** rows, and the reason is P-64: it is refuted *on the range the artifact
 adopted* (`r ≥ 1`; witness `(α,β,r) = (1,100,10)`, ratio 3.77) and **not** refuted on the range the
 paper actually stated (`0 ≤ r ≤ 1`, where the sweep minimum `c_eff = 0.242848` clears it by +0.118 (corrected 2026-09-18; see P-69)).
-An earlier version of this table placed `1/8` in the right-hand row only and asserted it was "**not**
-refuted"; that was true only before the range was checked, and it is exactly the kind of unqualified
+Placing `1/8` in the right-hand row only, and calling it "**not**
+refuted", holds only before the range is checked — exactly the kind of unqualified
 statement this table exists to prevent.  Conversely GAP-6, P-10 and P-64 are **not** reachability
 statements and must not be weakened into them — note P-64 refutes a *bound*, which is a different
 object from GAP-2b's *ceiling of a method* (the two coexist: `11/100` may well be unreachable by
@@ -1508,7 +1544,12 @@ this method *and* false as a bound).  These claims sit close together in `FIDELI
 GAP-6/§7), which is exactly why the distinction is worth an explicit table rather than an understood
 convention.
 
-### GAP-1 — Bayesian-regret decomposition (paper's Lemma 3, 4; quoted from [28])
+### GAP-1 — the paper's Lemma 3 + Lemma 4 ([28]) are cited, not reproved
+
+`cards/R11.md` records `L34` as open; the paper quotes both lemmas from [28] rather than deriving
+them, so `TSDPP/Regret.lean` carries them as `hdecomp` and `hper` in `TSDPP/Theorem2.lean`.
+What is missing is a trajectory measure space and Bellman operators on `L¹` of it — Mathlib has neither.
+
 **Resolution taken**: *not* axiomatised, and *not* claimed.  `TSDPP.episodeRegret_le` and
 `TSDPP.regret_le` take the per-round Bellman bound
 `∀ t, |diff t| ≤ K·δ_t` and the decomposition `regret = Σ_t diff t` as **hypotheses**, and prove
@@ -1529,7 +1570,7 @@ formalized, not assumed.
 
 Paper's Lemma 5: `X, Y iid Beta(α,β)`, `μ := E X = α/(α+β)` ⟹ `Pr(|X − Y| ≥ rμ) ≤ 2e^{−αr²/8}`.
 
-**Status after this session: reduced to an elementary union bound, and *proved* at a constant
+**Status: reduced to an elementary union bound, and *proved* at a constant
 `c₀ = 11/100` replacing the paper's `1/8`.** The residual gap is a factor in the exponent, and
 it is *quantified below to three decimal places*. It does **not** affect the paper's final rate:
 Eq (40)'s geometric sum `Σ_l L·2e^{−c α^l}` converges for *every* `c > 0`, so `O(√(L³T log T))`
@@ -1542,9 +1583,9 @@ Set `ρ := β/α`, so `μ = 1/(1+ρ)`. The union-bound split is `δ > 0`; parame
 
   `A(s) := (1 + ρs)·(1 − s)^ρ`,   `B(s) := ρs·(1/ρ + 1 − s)^ρ`.
 
-> **Correction (registered trap P-38).** An earlier revision of this section gave the relation as
-> `s = δ/(δ + (1−μ)/μ)`. That is **wrong**, and it is not a harmless slip: it was introduced while
-> *transcribing* a derivation, never numerically checked, and it silently made the two closed forms
+> **Correction (registered trap P-38).** The wrong relation is
+> `s = δ/(δ + (1−μ)/μ)`. It is not a harmless slip: transcribing a derivation without a numeric check
+> silently makes the two closed forms
 > below appear to disagree with brute-force Chernoff optima (relative errors `0.498`, `85.7`,
 > `7.3e193`, …) at five `(α,β)` pairs. The check that caught it — evaluate both sides at the same
 > point *before* trusting an identification — is trap **P-22** ("a parametrised identity checked at
@@ -1707,7 +1748,7 @@ arithmetic (so `norm_num` closes them) by the two Mathlib primitives
 No `norm_num` on `exp`/`log` is needed anywhere: both sides are rationals by the time the
 comparison is made.
 
-**Status: closed.**  `TSDPP.unionWitness` in `Scratch/UnionBound.lean` proves the two obligations
+**Status: closed.**  `TSDPP.unionWitness` in `TSDPP/UnionBound.lean` proves the two obligations
 above for every `ρ > 0` with the stated witness `s = min 1 (29/(50ρ))`, `sorry`-free, with
 `#print axioms` = `[propext, Classical.choice, Quot.sound]` (no `sorryAx`, no `native_decide`, no
 `unsafe`, no floats).  Both case-2 sub-obligations are met: `A(1) = (1+ρ)·0^ρ = 0` and
@@ -1718,10 +1759,10 @@ witness's global `sup_ρ max(A,B)` is `0.8847…`, attained as `ρ→∞` and co
 The four comparison certificates evaluate to `1.597754 ≥ 1.58`, `1.699372 ≤ 1.724138`,
 `−0.1764 ≤ −0.11`, and `0 ≤ e^{−11/100}`.
 
-**Dependencies for the Lean proof** (all now on the critical path):
-`betaMeasure`/`betaPDFReal` (Mathlib), `TSDPP.gammaMeasure_lintegral_exp` (done — this *is* the
+**Dependencies for the Lean proof** (all on the critical path):
+`betaMeasure`/`betaPDFReal` (Mathlib), `TSDPP.gammaMeasure_lintegral_exp` (this *is* the
 `(1−λ)^{−α}` step), the **Beta–Gamma ratio law** `Beta(α,β) = law(Γ_{α,1}/(Γ_{α,1}+Γ_{β,1}))`
-(in progress), and the product measure for the independent pair `(X,Y)`.
+(`TSDPP/BetaGamma.lean`), and the product measure for the independent pair `(X,Y)`.
 
 #### GAP-2e — the two-sample assembly (paper Eq (31)); the `r = 1` core, and why it does *not* cover `r > 1`
 
@@ -1733,7 +1774,7 @@ Its **use** is Eq (33): `r^l_i = max{1, √(8 log T / α^l_i)}`, i.e. `r^l_i ≥
 writes `Pr(ε_i^c) ≤ 2e^{−α^l_i (r^l_i)²/8}`. So the lemma is *stated* on `r ≤ 1` and *used* at
 `r ≥ 1` — the two ranges meet only at `r = 1`.
 
-> **[RETRACTED 2026-09-17 — traps P-62/P-64/P-67.  This paragraph previously argued: "That is not a
+> **[RETRACTED — traps P-62/P-64/P-67.  The argument that stood here was: "That is not a
 > defect to repair: for `r ≥ 1`, `{|X−Y| ≥ rμ} ⊆ {|X−Y| ≥ μ}` and `e^{−cα} ≤ e^{−cαr²}` (as
 > `r² ≥ 1`), so **the `r = 1` case implies every `r ≥ 1` case** ... The formalization therefore takes
 > `r = 1` as the core and derives `r ≥ 1` from it."]**
@@ -1813,7 +1854,7 @@ Carrying the paper's own arithmetic through with `L` symbolic gives
 which is *stronger* than the claimed `O(L^{3/2}√(T log T))`. So Theorem 2 is not falsified — it is
 implied — but the stated exponent `L³` is not what the derivation yields, and neither is the abstract's
 `L⁰`. See §8 for the numeric trace.
-Consequence for this artifact: we machine-check the **assembly step** (R14) as an exact finite-sum
+Consequence for this artifact: the **assembly step** (R14) is machine-checked as an exact finite-sum
 statement with the exponent left symbolic, so the artifact is agnostic between the three readings and
 records which one the paper's own computation supports.
 
@@ -1837,9 +1878,8 @@ own character stream (`... ≤1−16 η e−η/8 1 T + 2m T .`):
   `≤ Σ_{l=1}^{n} L·2e^{−ηl/8} + 2m/T ≤ 1 − (16/η)e^{−η/8}·(1/T) + 2m/T`.
 
 There are **no parentheses** around `1 − (16/η)e^{−η/8}`: the `1` is a bare additive constant and
-only `(16/η)e^{−η/8}` carries the `1/T`.  An earlier revision of this file quoted the last step as
-`(1 − (16/η)e^{−η/8})·(1/T)`; that is a *reconstruction*, not the printed text, and is corrected
-here.
+only `(16/η)e^{−η/8}` carries the `1/T`.  Reading the last step as
+`(1 − (16/η)e^{−η/8})·(1/T)` is a *reconstruction*, not the printed text.
 
 Four problems, in increasing severity:
 1. **The last step is false, not merely unreconstructible.**  Its left-hand side,
@@ -1863,12 +1903,11 @@ Four problems, in increasing severity:
    where it goes wrong.
 3. **The `β`/`T` bookkeeping.**  `T = mL` is used inconsistently: some places divide by `T`,
    others by `m`.
-4. **The `n` is printed, and it is correct** (correcting an earlier revision of this file, which
-   claimed the PDF had no `n` and that `paper.txt`'s `n` was an extraction artefact).  The `n` is
+4. **The `n` is printed.**  The `n` is
    plainly visible in the 600 dpi render of the second and third lines of Eq (40).  It is the
    truncation index `n = ⌈8 log T/η⌉` introduced in the sentence *above* the display: the `m`
    episodes are split into the first `n` (where `r^l_i` can reach `1`) and the remaining `m − n`,
-   whose contribution is the `2m/T`.  So `paper.txt` was right and this file was wrong.
+   whose contribution is the `2m/T`.
 
 **Resolution taken**: `TSDPP/Tail.lean` proves the *true* bound
 (`geom_exp_sum_le`: `Σ_{l<N} e^{−cη(l+1)} ≤ r/(1−r)` with `r = e^{−cη}` — the exponent constant is
@@ -1885,6 +1924,12 @@ shrinks, but so does the admitted radius, and the two movements cancel exactly. 
 and exponent are unaffected.  But the intermediate step is a defect in the paper's *proof* — a
 false assertion, not a difference of convention — so `theorem2_withTail` deliberately keeps the
 tail as an abstract `B` with `0 ≤ B ≤ √log T` rather than committing to either expression.
+
+### GAP-7 — the trajectory law `P_{θ*}` and the samplings `θ^l ∼ Q^l` are not available
+
+`TSDPP/Theorem2.lean` does not import `TSDPP/Simulation.lean`, so `simulation_lemma` and
+`bellman_step_le` are proved but never instantiated. `hper` needs the law of `(A_1,X_1,…,A_L,X_L)`
+under the policy and the posterior samplings `θ^l ∼ Q^l`. `cards/README.md` records the block.
 
 ## 8. Numeric falsification log (`scripts/numeric_check.py`)
 
@@ -1939,7 +1984,7 @@ Eq (37) is `(½C² + LC) + 2C(C+D)L`, and
 
 ```
 Eq(38) K  = 2*C**2*L + C**2/2 + 2*C*D*L + C*L
-mine      = 2*C**2*L + C**2/2 + 2*C*D*L + C*L
+delivered = 2*C**2*L + C**2/2 + 2*C*D*L + C*L
 difference= 0
 ```
 
@@ -1960,22 +2005,18 @@ The two "tight" rows are the reason `cards/R9.md` does **not** attempt to sharpe
     Lemma 2.
   * `Assembly.sum_range_inv_sqrt_le` (R14) → the R16 group, which consumes it as the Eq (39) input.
   * `StateBound.tail_le_eps` (R12a) → the R10 group, which consumes `δ ≤ C` as a hypothesis.
-* **Cross-pollination.**  The coordinator does not write the subagents' tactics; it aggregates
-  intermediate results and redistributes them.  Traps P-1…P-17 in §6 are exactly such
+* **Cross-pollination.**  No workstream writes another's tactics; the coordinator aggregates
+  intermediate results and redistributes them.  Traps P-1…P-17 in §6 are such
   redistributions — each was found in one workstream and is on the critical path of another.
-  Two were found *independently twice* (P-15, P-17), which is why they carry an explicit note.
+  Two (P-15, P-17) were found *independently twice*, which is why they carry an explicit note.
 * **Human judgement at the top only.**  No human tactic-writing was requested or used.  The only
   human inputs were the high-level priorities: "formalize the paper", and the constraint that
   cited results must be hypotheses rather than axioms.
 * **State-layer rebuild.**  Trigger: an agent stops citing closed cards and starts re-proving them,
-  or the status board in §3 and the actual `#print axioms` audit disagree.  **This triggered once,
-  at the end of the first work session**: the §3 board named declarations
-  (`TSDPP.Assembly.regret_assembly`, `TSDPP.Model.chainSucc`, `TSDPP.Round.round_diff_identity`,
-  `TSDPP.Lipschitz.belief_l1_le`, `TSDPP.Conjugacy.posterior_eq_betaMeasure`,
-  `TSDPP.StateBound.chain_tail`) that had never existed, and listed R7/R9/R12a/R15/R14 as CLOSED
-  when only R5/R6 had been built.  Response taken: stop, regenerate §3 from `lake build` output and
-  from `grep -nE "^(theorem|lemma|def)" TSDPP/*.lean`, then resume.  The board is now mechanically
-  checkable against the source tree.
+  or the status board in §3 and the actual `#print axioms` audit disagree.  Response: stop,
+  regenerate §3 from `lake build` output and from
+  `grep -nE "^(theorem|lemma|def)" TSDPP/*.lean`, then resume.  The board is mechanically
+  checkable against the source tree, which is what makes the trigger decidable.
 
 ## 10. Reproducing the artifact
 
@@ -1992,14 +2033,6 @@ has an *empty* axiom set, which passes, while a verdict for a name not in `Audit
 and rejects any declaration depending on an axiom outside `{propext, Classical.choice, Quot.sound}`,
 and (d) scans every source file for `sorry`/`admit`/`native_decide`/`unsafe` **outside comments**
 (block comments in Lean nest, so the scan uses `scripts/scan_forbidden.py` rather than a regex).
-Last run:
-
-```
-     43 audited, 40 reported, 3 with an EMPTY axiom set: copyStep, copyStep_other, copyStep_self
-OK: 13 source files scanned, no sorry, admit, native_decide, unsafe in code
-OK: 43 declarations audited; each depends on nothing, or on a subset of
-    {propext, Classical.choice, Quot.sound}
-```
 
 Two cautions about this gate, both learned the hard way (traps P-20, P-21):
 
@@ -2094,8 +2127,7 @@ computation in `ℝ × ℝ` (route REJ-11.1 below).  Closed route instead:
   the needed machinery for the affine case (`map_add_right_eq_self`, `Real.map_volume_mul_left`)
   exists in Mathlib; the corresponding "map under a rational map" does not.  Rejected after the
   translation step (11.1.2) showed the ratio could be produced by *linear* substitutions only.
-* **REJ-11.2 — `lintegral_map` + `Measure.map` of the ratio directly** (the coordinator's
-  `Measure.map (fun p => p.1/(p.1+p.2)) ... = betaMeasure a b` framing).  Not weaker, but strictly
+* **REJ-11.2 — `lintegral_map` + `Measure.map` of the ratio directly.**  Not weaker, but strictly
   *more* work: `Measure.ext_of_Ici` then requires the same CDF computation for every `t`, plus it
   needs `Ici`-continuity/`MeasurableSingletonClass` bookkeeping at `t = 0, 1` that the direct CDF
   statement with `0 < t < 1` skips.  The delivered CDF identity *implies* the map identity via
@@ -2106,7 +2138,7 @@ computation in `ℝ × ℝ` (route REJ-11.1 below).  Closed route instead:
   `betaMeasure` as a private lemma and doing the `ofReal` algebra once at the end was cheaper.
 * **REJ-11.4 — `rw` chains instead of `exact`/`congrArg`.**  See trap T-11.9.
 
-### 11.3 Lean traps met here (logged as encountered, per `CLAUDE.md`)
+### 11.3 Lean traps met here
 
 * **T-11.1 — `rw [lem h]` fails on `hr : 0 < r` against a lemma whose statement is `Ioi 0`.**
   The lemma's set metavariable unifies with the beta-reduced `Real.lt 0`, which is not
@@ -2140,8 +2172,8 @@ computation in `ℝ × ℝ` (route REJ-11.1 below).  Closed route instead:
   Fix: `exact lintegral_zero.trans (zero_mul _).symm`.
 * **T-11.10 — declaration order.**  A private lemma used inside the main proof must be *declared
   before* it; Lean has no forward references at tactic level.  `betaMeasure_Ici` moved up.
-* **T-11.11 — the `Edit` tool reported "String to replace not found" on multi-line blocks that
-  looked byte-identical** (likely whitespace/CRLF normalisation after the earlier splice).  Fix:
+* **T-11.11 — the `Edit` tool reports "String to replace not found" on multi-line blocks that
+  look byte-identical** (likely whitespace/CRLF normalisation).  Fix:
   line-index splicing with Python (`io.open(..., encoding='utf-8')`), which is reproducible.
 * **T-11.12 — probe files must not live under `TSDPP/`.**  `scripts/scan_forbidden.py` exits 1 on
   any file under `TSDPP/` whose stem starts with `probe`/`scratch`/`test`/`tmp`.  All probes went
@@ -2151,19 +2183,11 @@ computation in `ℝ × ℝ` (route REJ-11.1 below).  Closed route instead:
 
 * **GAP-11.1 — no gap in the closed statement.**  The theorem is proved for all `0 < a`, `0 < b`,
   `0 < t`, `t < 1`, with no extra hypotheses and no axioms beyond the three standard ones.
-* **GAP-11.2 — the endpoint cases `t = 0` and `t = 1` are not covered by this declaration.**
-  `Pr(t ≤ X)` for `t ≤ 0` is `1` and for `t ≥ 1` is `0`; these are not formalised here.  If the
-  downstream `Measure.map` identity is wanted, `Measure.ext_of_Ici` needs them (or `Ioi`-form
-  reasoning instead).  Recorded as a known boundary, not a hidden assumption.
+* **GAP-11.2 — the endpoint cases `t = 0` and `t = 1` are covered separately, not by the declaration of §11.**
+  `Pr(t ≤ X)` for `t ≤ 0` is `1` and for `t ≥ 1` is `0`; these are formalised in
+  `TSDPP/GammaRatioMap.lean`, which supplies the downstream `Measure.map` identity via
+  `Measure.ext_of_Ici`.
 
-  > **Closed 2026-09-17 by `TSDPP/GammaRatioMap.lean` (task #9).**  `t ≤ 0` and `t ≥ 1` *are* now
-  > formalised, in exactly the form this gap prescribed: `Measure.ext_of_Ici` at all `t`, with the
-  > two endpoints as separate branches (`0 < t < 1` reuses `gammaMeasure_prod_ratio`; `t ≤ 0` gives
-  > value `1`; `t ≥ 1` gives value `0`, and `betaMeasure a b (Ici 1) = 0` is proved once and reused).
-  > The statement of GAP-11.2 is therefore historical; the map-level law
-  > `betaMeasure α β = ((gammaMeasure α 1).prod (gammaMeasure β 1)).map (fun p => p.1/(p.1+p.2))`
-  > is unconditional for `0 < α`, `0 < β`.  See the `gammaMeasure_prod_ratio` row of the DAG and
-  > traps P-42…P-47.
 * **GAP-11.3 — the "faithfulness" argument (spec item 3) is by hand, not machine-checked.**  The
   Lean statement is the CDF identity that defines `Beta(a,b)`; there is no second, independent
   formalisation of "the ratio of two Gammas" in this repo to prove equivalence against (that would

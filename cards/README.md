@@ -2,132 +2,114 @@
 
 English | [中文](README.zh.md)
 
-One file per card.  A card is **CLOSED** only when (a) its Lean declaration builds with no
-`sorry`, and (b) `#print axioms` returns a subset of `{propext, Classical.choice, Quot.sound}`.
-Every card below records the cards it *consumes*, and — this is the point of the DAG — **which
-of its dependencies are still open**, so a reader can see at a glance how much of a result rests
-on unproved ground.
+Each card records a mathematical proposition, its proof or refutation route, and the results it depends on.
 
-The status board in `../DESIGN.md` §3 is regenerated from `lake build` output; this directory is
-the human-readable expansion of it.
+| Term or notation | Meaning |
+| --- | --- |
+| CLOSED | The listed statements have completed Lean proofs with no missing proof steps. |
+| Explicit assumption | A condition given at the start of a proof; for example, a bound on each episode's regret used to derive a bound on total regret |
+| Applying a general result (instantiation) | Specify how events occur and how data are sampled in this paper, then prove that they satisfy the conditions of the general result |
+| NOT FORMALIZED | Not yet expressed as a Lean definition or theorem |
+| REFUTED | A counterexample and its proof have been supplied |
+| ROOT | The step deriving the final regret bound from the preceding lemmas, corresponding to R17 |
+| [Telescoping sums](https://en.wikipedia.org/wiki/Telescoping_series) | Add consecutive differences so that the intermediate terms cancel $(a_1-a_0)+(a_2-a_1)+\cdots+(a_n-a_{n-1})=a_n-a_0.$ |
 
-## DAG
+## Dependencies
 
-```
-                    R1 ──────────────────┐
-                                         ├──► R12a ──── (δ ≤ C hypothesis) ──┐
-                    R2 ──────────────────┘                                   │
-                     │                                                       │
-                     └──► R5 ──► R6 ─────────────────────────────┐          │
-                                                                 │          │
-                    R8 ──► R9 (Lemma 2) ─────────────────────────┤          │
-                                    ▲                             │          │
-                    R3 ──► R15 ────┘                             │          │
-                                                                  ▼          ▼
-                                         R10  (Eq 36, Eq 37)  ◄──────────────┘
-                                                  │
-                    R11 (Eq 38 assembly) ◄────────┘
-                                                  │
-     R7 (Thm 1) ──────────────────────────────────┤
-                                                  ▼
-     R14 (Eq 39) ─────────────────────────────► R16  ──►  R17 = ROOT (Theorem 2)
-                                                  ▲            ▲
-     R13 (Eq 40) ─────────────────────────────────┘            │
-                                                                │
-     R11 (Eq 38 assembly) ──────────────────────────────────────┘
+The diagram shows how results depend on one another and where proofs or models remain to be supplied. Solid arrows show use of proved results, dashed arrows show required assumptions, and dotted lines show proved results awaiting application to this model.
 
-  Open dependency (carried as a hypothesis, never as an axiom):
-     L34 = Lemma 3 + Lemma 4  ([28])   ──► consumed by R11     ** partly — see below **
-     L5  = Lemma 5            ([45])   ──► consumed by R13 and R16
-
-  Out of scope (no Lean node at all — see R4.md):
-     P1 = Eq (5)–(7)   ─┐
-     R4 = Eq (10),(12),(13) ─┴─► the constrained policy; stands in for by the
-                                 *hypotheses* of `theorem2_rate`, not by a node
-```
-
-`L34` — the paper's Lemma 3 + Lemma 4 — is **partly** discharged.  The two halves must be reported
-separately, because the three declarations that carry it do not all carry the same weight:
-
-* **Lemma 3's combinatorial half is a theorem.**  `sum_range_blocks` cuts the horizon `T = m·L`
-  into `m` blocks of `L`, and `regret_decomp_episodeOf` supplies Eq (27)'s telescoping, so
-  `hdecomp` is *derived* — **in `theorem3_rate`**, which calls `theorem2_rate` at
-  `BR := ∑ s ∈ range (m*L), r s` and closes the premise at that instantiation.  `Theorem2.lean`'s
-  general `theorem2_rate` still takes `hdecomp` as a premise, by design: it is the statement over an
-  abstract `BR : ℝ`.  `Decomp.lean` is explicit that Lemma 3's *other* half — linearity of `∫` over
-  a finite index set — is not removed by any of this: *"what disappears is the assumption that the
-  decomposition holds, not the assumption that there is something to decompose."*
-* **Lemma 4 is proved, and in its most general form** — but it is not wired in, and `hper` is still
-  assumed.  `simulation_lemma` telescopes `∫ ω, ΔJ 0 ω ∂μ = ∑ t ∈ range L, ∫ ω, g t ω ∂μ` over an
-  **arbitrary** measure space, with `bellman_step_le` supplying its Bellman recursion `hrec`; there
-  is no bandit content in either.  What is missing is the instantiation: `Theorem2.lean` imports
-  `Mathlib, Decomp, Regret, Assembly, Tail, Rate` — **not `Simulation`** — and `hper` remains a
-  *hypothesis* of both `theorem2_rate` and `theorem3_rate`.  `Simulation.lean`'s own card states
-  this exactly: it claims to discharge "*part of* `hper`", not all of it.  The
-  missing step is the model — the trajectory law `P_{θ*}` and the posterior samplings `θ^l ∼ Q^l`,
-  i.e. `DESIGN.md` **GAP-7** — and not the lemma.
-
-  (`R4` is a **different** absent cluster — the constrained policy of Eq (10),(12),(13), tabulated
-  under "Out of scope" above — and nothing in the DAG consumes it.  It is not the blocker here; do
-  not merge the two.)
-
-The citation node appears in the DAG above so a reader can see, for the `hper` half, where it is
-still **open**.
-
-`L5` is the only remaining open **citation** in the DAG.  (`L34`'s `hper` half is open as a
-*hypothesis*, but its mathematical content is proved; the two are different kinds of open and are
-counted separately.)  It is never an `axiom`: every Lean
-statement that would need it takes it as an *explicit hypothesis*, so a reader can see exactly what
-is assumed and where.  See `../DESIGN.md` GAP-2 for the current state — the union-bound route is
-proved to have ceiling `0.8839970429 = e/(e−1)·e^{−1/(e−1)}`, whose `−log` is `0.123302 < 0.125`,
-so the artifact carries `c = 11/100` rather than the paper's `1/8`, with the difference quantified
-in `../FIDELITY.md` §3.4.
-
-**`L5` is being closed now** (card `L5.md`).  Its sub-DAG, all of it proved or in flight:
-
-```
-  TSDPP.gammaMeasure_prod_ratio      (set-level Beta–Gamma ratio law)   CLOSED  BetaGamma.lean
-        │
-        ├──► gamma_ratio_isBetaMeasure  (map-level, via ext_of_Ici)   CLOSED  GammaRatioMap.lean
-        │           │
-  TSDPP.gammaMeasure_lintegral_exp      (Gamma Laplace transform)       CLOSED  GammaMGF.lean
-        │           │
-  TSDPP.gammaMeasure_prod_meas_le       (Markov on the product measure) CLOSED  TSDPP/
-        │           │
-  TSDPP.betaMeasure_Ici_le / _Iio_le    (the two one-sample tails)      CLOSED  TSDPP/
-        │           │
-  TSDPP.unionWitness                    (two-case numeric witness)      CLOSED  TSDPP/
-        │           │
-        ▼           ▼
-  betaMeasure_abs_sub_concentration     (Eq (31) at c₀ = 11/100)        OPEN
+```mermaid
+flowchart TB
+  subgraph proved["PROVED"]
+    R5["R5: belief law"] --> R9["R9: Lemma 2 / Lipschitz bounds"]
+    R9 --> R10["R10: per-round bounds"]
+    R11["R11: regret_le"] --> ROOT["R17: theorem2_rate / theorem2_concrete"]
+    R14["R14: weighted sum bound"] --> EQ39["R17: eq39_collapse"]
+    EQ39 --> ROOT
+    R16["R16: rate arithmetic"] --> ROOT
+    DEC["Decomp: episode decomposition"] --> ROOT3["theorem3_rate"]
+    ROOT --> ROOT3
+  end
+  subgraph premises["EXPLICIT PREMISES"]
+    HC["delta <= C"] -. "premise" .-> R10
+    HP["hper: episode bound / Lemma 4 input"] -. "premise" .-> R11
+    HD["hdecomp: abstract regret decomposition"] -. "premise" .-> ROOT
+    RAD["hdelta, hηl: radius and drift bounds"] -. "premise" .-> EQ39
+    B["hB0, hBle: tail parameter B"] -. "theorem2_concrete" .-> ROOT
+  end
+  subgraph candidates["PROVED, NOT CONNECTED"]
+    SIM["Simulation: generic Lemma 4; model conditions remain"] -.- HP
+    TAIL["R13: geometric tail bound; B supplied separately"] -.- B
+  end
+  subgraph absent["MODELS TO FORMALIZE"]
+    POLICY["P1 / R4: constrained policy"]
+    LAW["GAP-7: trajectory law and posterior sampling"]
+  end
+  subgraph independent["OTHER PROVED CARDS"]
+    R1["R1: chain path bound"] --> R12["R12a: state bound"]
+    R7["R7: posterior conjugacy"]
+    R2["R2: iteration"]
+    R3["R3 / R15: penalty identities"]
+    R8["R8: arm-selection identity"]
+    R6["R6: belief mean"]
+  end
 ```
 
-Two consequences of closing `L5` that reach beyond it:
 
-1. **A module outside `TSDPP/` is in no closure.** `TSDPP/BetaGammaChernoff.lean` and
-   `TSDPP/UnionBound.lean` sit in the root module's import closure, so `lake build TSDPP` compiles
-   them and `lean4/scripts/check_axioms.sh` audits them; verified with
-   `lake build TSDPP.BetaGammaChernoff TSDPP.UnionBound` (green, 8933 jobs).  The same file under
-   `Scratch/` would not work: `lakefile.toml` declares exactly one `lean_lib` (`name = "TSDPP"`) and
-   `Scratch/` has no oleans, so `import Scratch.BetaGammaChernoff` does not resolve at all, and the
-   assembly file would have no way to reach the lemmas it consumes.  There are no declaration-name
-   conflicts anywhere in `TSDPP/`, and the redundant `Scratch/` copies are deleted rather than left
-   to drift.
-2. **The constant propagates.** The paper's `8` is *coupled* — it appears both in Lemma 5's
-   exponent and in the radius `r = √(8 log T/α)`.  Our `c₀` forces `K ≥ 1/c₀ = 100/11` in
-   `Rate.lean` and `cη` (the parameter `c`, paper `1/8`, artifact `11/100`) in place of `η/8` in
-   `Tail.lean`.  `R13` and `R16` as the paper states them are *true* but are not the statements the
-   chain consumes; both are **stated** at `K₀ = 100/11` (`Tail.lean`'s exponent is the parameter
-   `c`, `Rate.lean`'s radicand is `(100/11)`, `two_mul_sqrt_eight_le` is renamed
-   `two_mul_sqrt_ratio_le`, and the final constant is `8`, near-tight at
-   `2√(100/11) + 1 = 7.030227`).  Verified: `lake build TSDPP` green;
-   `lean4/scripts/check_axioms.sh` audits the declarations `Audit.lean` lists, each depending on nothing
-   or on a subset of `{propext, Classical.choice, Quot.sound}`.  The rate `O(√(L³T log T))` is
-   unchanged — a geometric series converges for every `c > 0`.
+## Results and remaining work
 
-`R4` is not an *open* node but an **absent** one — the paper's problem statement was never
-formalized, so nothing in the DAG consumes it.  `R4.md` records it in place of the file that would
-otherwise be missing.
+### Lemmas 3 and 4
+
+The two results are at different stages:
+
+| Lemma | Overall status | Proved | Remaining work |
+| --- | --- | --- | --- |
+| Lemma 3 | Incomplete | Finite summation by episodes, used in `theorem3_rate` | Supply the probability model, verify integration conditions, and derive the expectation decomposition |
+| Lemma 4 | Incomplete | General summation identity | Supply the trajectory distribution and posterior sampling scheme, verify the lemma's conditions, and derive the required per-episode regret bound |
+
+Proofs and remaining premises appear in [Theorem2.lean](../lean4/TSDPP/Theorem2.lean) and [Simulation.lean](../lean4/TSDPP/Simulation.lean).
+
+### Lemma 5
+
+| Target | Status | Completed | Remaining |
+| --- | --- | --- | --- |
+| Paper-stated range `0 ≤ r ≤ 1` | Formalization incomplete | A convex-order route and informal proof | Translate this proof into Lean; see [L5-CONVEX.md](L5-CONVEX.md) |
+| Current conditional proof route | Conditional result proved | Auxiliary results yield a probability-bound expression | Prove that this expression is at most the target bound to obtain an unconditional result; see [L5.md](L5.md) |
+| Bound used on `r ≥ 1` | Refuted | Counterexample and Lean refutation | —; see [L5-REFUTATION.md](L5-REFUTATION.md) |
+
+The diagram shows the current conditional route; the dashed arrow marks the final inequality that remains to be proved.
+
+```mermaid
+flowchart TB
+  RATIO["BetaGamma: ratio law"] --> MAP["GammaRatioMap: measure map"]
+  MGF["GammaMGF: Laplace transform"] --> CH["BetaGammaChernoff: one-sample bounds"]
+  CH --> U["BetaConcentration: conditional two-sample bound"]
+  MAP --> U
+  SPLIT["UnionBound: set containment"] --> U
+  NUM["Final inequality: unproved"] -. "explicit premise" .-> U
+  REF["Lemma5Refutation: registered unconditional bound is false"]
+```
+
+
+### How the Lemma 5 constant affects the regret bound
+
+Lemma 5 bounds the probability of estimation error. Its constant determines the error range used later: a weaker probability bound requires a larger permitted error to achieve the same confidence level.
+
+The paper uses `1/8` in the probability bound and the corresponding `8` in the error range. This development's conditional route uses `11/100`, so the corresponding coefficient becomes its reciprocal, `100/11`. Calculations at this value yield a final regret-bound coefficient of `8`. These formulas share a constant, so changing its value requires updating the later calculations.
+
+| Stage | Paper | This development |
+| --- | --- | --- |
+| Probability-bound constant | `1/8` | `11/100`, without a complete derivation |
+| Corresponding error-range coefficient | `8` | `100/11` |
+| Final regret-bound coefficient | See the paper's derivation | `8` in the proved conditional bound |
+
+The geometric tail calculation is proved for any positive `c`, allowing different values. The conditional route still requires the final inequality before it can establish the probability-bound constant. See [R13.md](R13.md), [R16.md](R16.md), and [L5.md](L5.md) for the calculations.
+
+### Content not yet expressed in Lean
+
+[R4.md](R4.md) records the paper's DPP index, policy, and budget constraint (Eq (10), (12), and (13)); these are not yet expressed in Lean.
+
+## Card index
 
 | card | file | status |
 |------|------|--------|
@@ -143,10 +125,10 @@ otherwise be missing.
 | R10 | `R10.md` | CLOSED |
 | R11 | `R11.md` | CLOSED |
 | R12a| `R12a.md`| CLOSED |
-| L34 | (citation, [28]) | **PARTLY** — L3's combinatorial half is derived (`regret_decomp_episodeOf`, used by `theorem3_rate`); L4 is *proved* (`simulation_lemma`, `bellman_step_le`) but **not instantiated**, so `hper` is still a hypothesis.  Blocked on GAP-7, not R4 |
-| L5  | (citation, [45]) | **NOT CLOSED — the registered form is FALSE** (trap P-64, see `L5.md`).  The artifact stated `r ≥ 1`; the paper states `0 ≤ r ≤ 1`.  On `r ≥ 1` the bound fails at `(α,β,r) = (2,200,10)`: exact `8.6066401e−09` vs the registered bound `5.5789e−10`, a **15.43×** exceedance.  Everything *delivered* is real and stays: the conditional `hnum ⟹ bound`, the two exact one-sample Chernoff tails, the union-bound core, and the four `'`-forms.  Ratio law **CLOSED** (`BetaGamma.lean`); map-level weld **CLOSED** (`GammaRatioMap.lean`); constant propagation to R13/R16 in `Tail.lean` and `Rate.lean`.  The old ceiling claim (`0.123302 < 1/8` ⟹ `c₀ = 11/100`) is **RETRACTED** (P-62 layers 1–3) and `c₀ = 11/100` is now **[UNDERIVED]**; see `DESIGN.md` J-11 for why restating on the paper's range does not repair the paper's application either.  **Extended by P-67**: on Eq (33)'s own parameter curve `r = max{1,√(8 log T/α)}`, the **paper's** `1/8` fails in 5 of 6 sampled tuples (incl. `α=1, T=10⁶`), so the paper's *use* is false on the paper's own settings, not just the artifact's formalization.  **The refutation is itself now a deliverable** (`CLAUDE.md` item 1 admits "完整证明**或反证**"): card **`L5-REFUTATION.md`** carries the certificate — witness `(α,β,r) = (1,100,14)`, elementary containment `{X ≥ 15/101} × {Y ≤ 1/101} ⊆ {\|X−Y\| ≥ 14/101}`, provable lower bound `LB = (86/101)^100·(1−(100/101)^100)` exceeding the registered bound by **75.79×** (and the true probability by **353.48×**).  Machine-checked form: **`lean4/TSDPP/Lemma5Refutation.lean` — CLOSED, unconditional, audited.**  Both headline theorems (`lemma5_as_registered_is_false` at `11/100`, `paper_lemma5_range_ge_one_is_false` at the paper's own `1/8`) carry **no hypotheses**; their analytic input is `lean4/TSDPP/BetaOneCDF.lean` (the closed-form `Beta(1,B)` tail).  Built into the root closure and audited by `lean4/scripts/check_axioms.sh`.  **SCOPE — read `L5-REFUTATION.md` §0 before quoting this:** the **`r ≥ 1`** statement is refuted; the paper's own Lemma 5, which p. 9 Eq (31) states for **`0 ≤ r ≤ 1`**, is **not** refuted (the witness sits at `r = 14`, outside that range), and neither is the paper's theorem — a proof step that does not go through does not make a theorem false |
-| R13 | `R13.md` | CLOSED (stated at the tail-exponent parameter `c > 0`) |
+| L34 | citation [28] | Combinatorial decomposition declarations CLOSED; generic simulation declarations CLOSED but not instantiated, leaving `hper` as an explicit premise. See GAP-7 |
+| L5 | `L5.md`, `L5-REFUTATION.md` | Conditional declarations CLOSED with premise `hnum`; registered unconditional target on `r ≥ 1` REFUTED; refutation declarations CLOSED without additional premises. The paper-stated range `0 ≤ r ≤ 1` is not refuted |
+| R13 | `R13.md` | Declarations CLOSED: tail bound parameterized by `c > 0`, not the printed Eq (40) |
 | R14 | `R14.md` | CLOSED |
 | R15 | `R15.md` | CLOSED |
-| R16 | `R16.md` | CLOSED (stated at `K₀ = 100/11`; final constant `8`) |
-| R17 | `R17.md` | CLOSED (**ROOT** — Theorem 2 assembled) |
+| R16 | `R16.md` | Declarations CLOSED at `K₀ = 100/11`, with final constant `8` |
+| R17 | `R17.md` | Declarations CLOSED; Combines the preceding lemmas into a conditional regret bound with the explicit premises in each signature |

@@ -1,5 +1,5 @@
 /-
-Copyright: formal artifact for INFOCOM'26 `infocom26.pdf`.
+Copyright (c) 2026 TSDPP contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 
 # ROOT — Theorem 2, `BR(T) = O(√(L³ T log T))`, assembled
@@ -16,7 +16,7 @@ The radius constant is `K₀ = 100/11`, not the paper's `8`: the artifact's Lemm
 `c₀ = 11/100` (GAP-2b), and `K₀ = 1/c₀` is what keeps the paper's `2m/T` failure bound (see
 `cards/R13.md`).  Consequently every `√(8·logT/η)` below is `√((100/11)·logT/η)` and the final
 constant is `8 = 7 + 1` rather than the paper's `6 + 1` — the `+1` is the tail's, and
-`2√(100/11) + 1 = 7.0303 > 7` (trap P-19).
+`2√(100/11) + 1 = 7.030227 > 7` (trap P-19).
 
 The result is **not** stated in `O(·)` notation.  Mathlib's `Asymptotics` would need a filter on
 `T` that the paper never pins down, and the paper's own `O(√(L³T log T))` is ambiguous between
@@ -159,11 +159,15 @@ theorem theorem2_withTail {m L : ℕ} {η logT K B : ℝ} (hη : 0 < η) (hlogT 
 
   `|BR| ≤ K · 8 · √(L³·T·log T / η)`.
 
-Since `K = Θ(L)`, this is `Θ(√(L³T log T))` — the paper's Theorem 2 rate with the constant made
-explicit.  The `8 = 7 + 1` comes from `Rate.rate_core`: `2L√(K₀Z) ≤ 7√(L⁴Z)` (the `L ≤ L²` slack
+Since `K = Θ(L)`, this is `Θ(L·√(L³T log T/η))`, one factor of `L` above the paper's
+`O(√(L³T log T))`.  The extra `L` is `Rate.rate_core`'s doing: its `L ≤ L²` step and its
+`B ≤ √(log T)` hypothesis both lift the tail onto the `L²` scale, which is what lets the paper's
+radius constant survive at `K₀ = 100/11`.  The two agree as soon as `L` is bounded, the paper's
+operative reading; `theorem2_rate` below keeps the `L` visible for exactly that reason, and
+`Asymptotic.lean` records the growing-`L` reading.  The `8 = 7 + 1` comes from `Rate.rate_core`: `2L√(K₀Z) ≤ 7√(L⁴Z)` (the `L ≤ L²` slack
 pays for `√(K₀)`, `K₀ = 100/11`) plus `B ≤ √(log T) ≤ √(L⁴Z)` (the hypothesis `η ≤ L⁴m`).  The
 paper's own constant is `6 + 1` at its radius `√8`; at `K₀ = 100/11` the first summand is
-`2√(100/11) = 6.0303`, so the same `+1` forces `8` (trap P-19: `2√(100/11) + 1 = 7.0303 > 7`).
+`2√(100/11) = 6.030227`, so the same `+1` forces `8` (trap P-19: `2√(100/11) + 1 = 7.030227 > 7`).
 
 The bound is stated for an *arbitrary* `BR : ℝ` satisfying the Eq (38) hypotheses, so it is
 independent of how the regret was defined (Eq (18)) or estimated — that is the point of isolating

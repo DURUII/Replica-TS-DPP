@@ -1,9 +1,9 @@
 # DESIGN — Lean 4 formalization of *Age-of-Information-Aware Mobile Crowdsensing for Uncertain Event Capture* (INFOCOM'26)
 
-Paper: `paper.pdf` (Zhou, Xu, Xu, Xiao, Wu).
+Paper: Zhou, Xu, Xu, Xiao, Wu, INFOCOM'26.
 Dependencies permitted: `ref.txt` (Lean install docs + LML, rl-theory-in-lean, lean-stat-learning-theory,
 FormalSLT, FormalML, mathlib4). **Of these, only the last two are actually used**: `mathlib4` is the
-sole `[[require]]` in `lean4/lakefile.toml` and the sole external import anywhere in the tree
+sole imported `[[require]]` (`lean4/lakefile.toml`) and the sole external import anywhere in the tree
 (`grep -rh '^import' lean4/TSDPP/*.lean lean4/TSDPP.lean` yields only `Mathlib` and `TSDPP.*`). The
 five ML/SLT repositories are **permitted but unused** — no clone, no Lake dependency, no import;
 they are listed because `ref.txt` allows them, not because the development rests on them. This
@@ -127,14 +127,14 @@ coverage line is a floor, not a statement that the closure is audited.  (A modul
 import closure is compiled by nothing: `lake build` never compiles it and `scan_forbidden.py` never
 reads it; see the import block in `TSDPP.lean`.)
 
-**Tree invariant.**  Every `TSDPP/*.lean` file must be either the root module, or
-reachable from it by `import`.  A file that is in the directory but outside the closure is compiled
+**Tree invariant.**  Every `TSDPP/*.lean` file must be the root module,
+reachable from it by `import`, or `Audit.lean`.  A file that is in the directory but outside the closure is compiled
 by nothing and, for `lake build` purposes, does not exist — hence the rule below.  The check is one line:
 
 ```
 grep "^import TSDPP" TSDPP.lean | sed 's/import TSDPP\.//' | sort > /tmp/incl
 ls TSDPP/*.lean | xargs -n1 basename | sed 's/\.lean//' | sort > /tmp/all
-comm -13 /tmp/incl /tmp/all      # must print nothing but the file currently in flight
+comm -13 /tmp/incl /tmp/all      # must print nothing but `Audit.lean` and the in-flight file
 ```
 
 **Four superseded modules quarantined to `Scratch/superseded/`.**  `BetaMeasureIci.lean`,
@@ -143,7 +143,7 @@ more of the lemmas that `TSDPP/BetaGamma.lean` now carries as `private` helpers 
 `betaMeasure_Ici`, `setLIntegral_of_measure_eq_zero`, `lintegral_sub_right`,
 `lintegral_mul_left_of_pos`, `lintegral_rpow_exp_neg_Ioi`, `gammaPDF_mul_factor` are all present in
 both places.  Nothing imports them, so nothing compiles them; all four compile clean standalone, and all six names are
-`private` in `BetaGamma.lean` (lines 9, 13, 20, 28, 95, 145), so the public copies are dead rather
+`private` in `BetaGamma.lean` (lines 13, 17, 24, 32, 99, 149), so the public copies are dead rather
 than load-bearing.  They are kept, not deleted — they are the pre-consolidation history of the
 ratio-law proof and may still be useful to a reader reconstructing it.  (The three with an *empty* axiom set are `copyStep`, `copyStep_other`, `copyStep_self` —
 they depend on no axioms at all, not even `propext`; the audit checker counts verdicts, so an empty
@@ -182,10 +182,10 @@ that document calls *closed* is machine-checked rather than merely asserted.
 `c = 8·(½C² + 2C² + 2CD + C)` explicit and `T`-free, via `theorem2_concrete` and
 `regretCoeff_le_mul`.  (The `8` is the paper's `7` after the radius constant became `K₀ = 100/11`
 instead of `8`; see trap P-19 and `cards/R13.md`.)  The whole *numerical* content of the paper's rate is therefore
-machine-checked.  What is not formalized is the `O(·)` **symbol** itself: it needs a filter on `T`
-and a decision on whether `L` grows with `T` (GAP-4), which the paper never fixes.  Choosing that
-convention is a modelling decision, not a mathematical gap — `FIDELITY.md` §4 carries the
-discussion.
+machine-checked.  What remains is the `O(·)` **symbol**: `TSDPP.Asymptotic` carries
+`theorem2_rate`'s bound to `=O[atTop]` under the fixed-`L` reading of GAP-4, and records the
+growing-`L` reading it does not take.  That convention is a modelling decision, not a mathematical
+gap — `FIDELITY.md` §4 carries the discussion.
 
 ## 4. Conventions fixed before any tactic (paper is ambiguous here)
 
@@ -368,7 +368,7 @@ discussion.
   | **`α = 1`, `β = 100`, `r = 14`** | **yes** | `α = 1 ⟹ beta 1 B = 1/B` and `x^{1−1} = 1`, so the density is exactly `B(1−x)^{B−1}` and the tail is the **single power** `(1−t)^B`; the one real-analysis node becomes `∫_a^b B(1−x)^{B−1} dx`, a polynomial integral |
 
   The constant `c₀ = 11/100` is irrelevant to the refutation's existence (the witness violates the
-  paper's `1/8` too, by `353×` at the true value), which is why the refutation does not need the
+  paper's `1/8` too, by `6686×` at the true value), which is why the refutation does not need the
   retracted `c₀` derivation of P-62.
 
   **Cost paid for choosing a Lean-cheap witness**: the provable lower bound `LB` is `4.664×` below
@@ -392,7 +392,7 @@ discussion.
   endpoints. Verified numerically first (`scripts/numeric_check.py`) that `sup|f'| = 1` exactly, attained
   at `θ=0`; a naive `interval_cases`-free estimate that assumed the sup was in the interior would fail.
   The interval in the statement is therefore the closed `[0,1]`, not the open one.
-* **P-4.** The numeric falsifier showed Lemma 2's constant `2δ` is **tight** (ratio `1.0000000000000113`
+* **P-4.** The numeric falsifier showed Lemma 2's constant `2δ` is **tight** (ratio `1.0000000000`,
   after 30 000 random trials, i.e. `= 1` up to floating error). Consequence: the proof may not "improve"
   `2δ` to `δ` anywhere; an early proof sketch did, and the falsifier caught it. Logged because the paper's
   own Eq (25) argument is what forces `2δ` (δ terms of size `|Δθ|` plus one term of size `δ|Δθ|`).
@@ -495,14 +495,14 @@ discussion.
   **The same trap, re-armed, and this time it fires in reverse.**  The
   artifact's radius constant is now `K₀ = 100/11`, not the paper's `8`, so the declaration proves
   `2L√(K₀Z) + B ≤ 8√(L⁴Z)`.  The witness above is unchanged (`L = m = logT = η = 1`, `B = √log T`)
-  but its value moves from `2√8 + 1 = 6.656854` to `2√(100/11) + 1 = 7.030226`.  Two consequences
+  but its value moves from `2√8 + 1 = 6.656854` to `2√(100/11) + 1 = 7.030227`.  Two consequences
   that this entry exists to warn about:
   * the constant `7`, tight and valid at the paper's radius `8`, is **refuted** at `K₀ = 100/11` by that same explicit witness
-    (`7 < 7.0303`), so the substitution `7 → 8` is forced, not cosmetic;
+    (`7 < 7.0302`), so the substitution `7 → 8` is forced, not cosmetic;
   * the first summand alone is `2√(100/11) = 6.030227`, still `< 7`, so *the intermediate bound
     `2L√(K₀Z) ≤ 7√(L⁴Z)` survives and only the `+1` crosses*.  A reader who checks only the first
     summand (as one naturally does, since that is where the substitution bites) will conclude `7`
-    is fine and be wrong by `0.0303`.  Both numbers must be checked; see P-48 for the version of
+    is fine and be wrong by `0.0302`.  Both numbers must be checked; see P-48 for the version of
     this mistake that a compiler *can* catch.
 * **P-20 (do not run a mutate-restore cycle in a command that a timeout can kill).**  A negative
   control for `check_axioms.sh` truncated `TSDPP/Assembly.lean`, ran the gate, and restored the
@@ -556,10 +556,10 @@ discussion.
   boundary-layer parametrisation `δ = ρ(1−e^{−t})`, the optimizer was allowed to range over
   `δ ∈ (0, ρ)` — silently **dropping the hypothesis `hδ1 : δ < 1`**, which for `ρ > 1` is the
   binding constraint.  It then reported `m(2) = 0.5`, `m(5) = 0.0016`, `m(10) = 1e−9` (the
-  `δ → ρ⁻` limit of `B`, i.e. `ρ^{1−ρ}`) against the true `0.819146`, `0.858605`, `0.871392` — two
+  `δ → ρ⁻` limit of `B`, i.e. `ρ^{1−ρ}`) against the true `0.819142`, `0.858598`, `0.871389` — two
   to nine orders of magnitude wrong, and *smaller*, so it would have "corrected" a correct table.
   Fixing the domain to `(0, min(1,ρ))` reproduces the recorded table to six digits
-  (`0.603259, 0.750000, 0.819146, 0.858605, 0.871392`, and `m(0.1) = 0.125892541`).  **A grid
+  (`0.603256, 0.750000, 0.819142, 0.858598, 0.871389`, and `m(0.1) = 0.125892541`).  **A grid
   failure need not be about resolution or domain *extent*; it can be a dropped hypothesis.**  Revert
   to the statement and re-read every side condition before trusting a re-optimisation.
   **Strengthened general rule:** a grid bracket is *bracketing in neither direction* — it can hide a
@@ -605,7 +605,7 @@ discussion.
   that must be pushed through `abs_sub_le_iff` before use.  The directly usable upper bound is
   `Real.exp_bound' (h1 : 0 ≤ x) (h2 : x ≤ 1) {n} (0 < n) : exp x ≤ (∑_{m<n} x^m/m!) + x^n (n+1)/(n! n)`
   — that is what closes `e^{53/100} ≤ 50/29` at `n = 4`
-  (`1.695258 + (0.53)^4·5/96 = 1.699372 ≤ 1.724138`).
+  (`1.695263 + (0.53)^4·5/96 = 1.699372 ≤ 1.724138`).
   Mechanical note: `norm_num [Finset.sum_range_succ] at h` is what actually evaluates the range sums;
   plain `norm_num at h` does not reliably unfold `∑ i ∈ Finset.range k, x^i/i!` for literal `k`.
 * **P-29 (GAP-2d's case-2 obligation has a cheaper certificate than the one prescribed).**  GAP-2d
@@ -829,7 +829,7 @@ discussion.
   `2√(100/11) = 6.030227 ≤ 7` is about a *different* inequality from the one the proof uses.
   **Rule: after a parameter substitution, re-derive every inequality in the chain from the goal and
   numerically check each intermediate bound, not just the endpoint.**  (`2√(100/11) ≤ 7` ✓,
-  `100/11 ≤ 49/4` ✓, `2√(100/11) + 1 = 7.0303 > 7` ✗ for the old constant, `2√(100/11) + 1 ≤ 8` ✓ —
+  `100/11 ≤ 49/4` ✓, `2√(100/11) + 1 = 7.0302 > 7` ✗ for the old constant, `2√(100/11) + 1 ≤ 8` ✓ —
   the four checks disagree at the third, which is the one that moves the numeral.)
 * **P-49 (`ring` cannot see through `√`: a producer/consumer pair must agree on the *syntactic*
   shape of a radicand).**  Provenance: the `1/8 → 100/11` substitution in `Theorem2.lean`.  The bridge
@@ -1078,8 +1078,8 @@ discussion.
 
   *Layer 2 — the first replacement (false).*  It read `max(A(δ₁),B(δ₁)) ≥ m` with
   `m = inf_δ max(A,B) = 0.8839970429`.  That value is **`sup_ρ min_δ max`**, and
-  `min_δ max(A_ρ,B_ρ)` **increases** in `ρ` — `0.5 → 0.603256`, `1 → 0.750000`, `2 → 0.819143`,
-  `5 → 0.858599`, `10 → 0.871389`, `100 → 0.882745`, `→∞ → 0.8839970429` — so it is **not a lower
+  `min_δ max(A_ρ,B_ρ)` **increases** in `ρ` — `0.5 → 0.603256`, `1 → 0.750000`, `2 → 0.819142`,
+  `5 → 0.858598`, `10 → 0.871389`, `100 → 0.882745`, `→∞ → 0.8839970429` — so it is **not a lower
   bound at finite `ρ`**.  The replacement also wrote `hnum`'s two terms — `δ₁` inside `chernoffA`
   and `δ` inside `chernoffB`, independent of each other — as one and the same `δ₁`.
 
@@ -1223,8 +1223,8 @@ discussion.
   | `(α, β, r)` | `Pr(\|X−Y\| ≥ rα/(α+β))`, exact | `c_eff` | vs `11/100` | vs `1/8` |
   |---|---|---|---|---|
   | (1, 100, 10) | 2.809651246898e−05 | 0.111730 | holds | **fails 3.77×** |
-  | (2, 200, 10) | 8.606640056681e−09 | 0.096319 | **fails 15.43×** | fails 311× |
-  | (5, 500, 10) | 3.658586854855e−19 | 0.086290 | **fails 1.4e5×** | fails 2.6e8× |
+  | (2, 200, 10) | 8.606640056681e−09 | 0.096319 | **fails 15.43×** | fails 309.86× |
+  | (5, 500, 10) | 3.658586854855e−19 | 0.086290 | **fails 1.4e5×** | fails 2.545e8× |
 
   with `c_eff := −log(LHS/2)/(αr²)`, the largest constant the data admit.
 
@@ -1489,6 +1489,14 @@ Recorded so that a future attempt does not have to rediscover them.
   所以「两个见证互相矛盾」的读法是错的。真正的问题是 `cards/README.md` 的 **bound 数值**：`2.7895e−10`
   = `e^{−22}`，恰好是注册界 `2e^{−22} = 5.5790e−10` 的**一半**——**丢了一个因子 2**，
   `Lemma5Refutation.lean` 的陈述里那个 `2 *` 是写着的。于是该行隐含的比值 `30.86×` 应为 `15.43×`。
+
+  **两个量都要留，但各自只在一个位置上对。** `e^{−22} = 2.789e−10` 在本 artifact 里是**合法**的：
+  union bound 中**单条尾巴**所需的正是这个量（`DESIGN.md` 1244 行、`BetaConcentration.lean` 37 行的
+  `2305×`、`FIDELITY.md` 556 行的 `required`），写成 `5.579e−10` 反而错。反过来，凡是上下文说
+  「注册界」「the bound of」「RHS」「registered」的地方，值必须是 `2e^{−22} = 5.579e−10`——写成
+  `2.789e−10` 就是这里说的丢因子 2。修正落在三处：`cards/L5.md` §0、`Audit.lean` §注、以及
+  `BetaConcentration.lean` 文件头。
+
   **Rule**: 反例表必须写出它对着**哪一条陈述**（哪个常数、哪一侧），并给出计算脚本；
   「见证 A ≠ 见证 B」不等于「其中之一错」，而「数值对不上自己引用的陈述」一定是错。
 * **P-73 (探针静默失败，空输出被读成「无命中」).**  本机没有 `ag`（`/opt/homebrew/bin/ag` 与
@@ -1742,7 +1750,7 @@ arithmetic (so `norm_num` closes them) by the two Mathlib primitives
 * `(1 + t) ≤ e^{t−c₀}`: exponent `29/50 − 11/100 = 47/100`. `Real.sum_le_exp_of_nonneg` at
   `x = 47/100`, `n = 4` gives `e^{0.47} ≥ 1.597753`, and `1 + t = 1.58` (margin 1.1%).
 * `t ≤ e^{t−1−c₀}`: exponent `29/50 − 1 − 11/100 = −53/100`, so this is `e^{53/100} ≤ 50/29`.
-  `Real.exp_bound` at `x = 53/100`, `n = 4` gives `e^{0.53} ≤ 1.695263 + (0.53)^4·5/96 = 1.699371`,
+  `Real.exp_bound` at `x = 53/100`, `n = 4` gives `e^{0.53} ≤ 1.695263 + (0.53)^4·5/96 = 1.699372`,
   and `50/29 = 1.724138` (margin 1.4%).
 
 No `norm_num` on `exp`/`log` is needed anywhere: both sides are rationals by the time the
@@ -1886,9 +1894,8 @@ Four problems, in increasing severity:
    `Σ_{l=1}^{n} L·2e^{−ηl/8}`, is *independent of `T`* — the truncation index `n` grows, but the
    series converges — and tends to `L·2e^{−η/8}/(1−e^{−η/8})`, a constant increasing in `L`.  Its
    right-hand side tends to `1`.  At the paper's own experimental setting (`L = 20`, `η = 2`) the
-   left side is `140.83`, the right side `1.0062` at `T = 10³` and `→ 1`.  So the printed
-   inequality asserts `140.83 ≤ 1`.  Falsified numerically in one line by
-   `scripts/numeric_check.py`.
+   left side is `140.83`, the right side `0.99377` at `T = 10³` and `→ 1`.  So the printed
+   inequality asserts `140.83 ≤ 0.99377`.  Falsified numerically in one line by direct evaluation.
    **How far off it is.**  The excess is a *constant factor*, not a growth in `T`.  With
    `n = ⌈8 log T/η⌉` the truncation is nearly invisible (`e^{−nη/8} ≤ 1/T`), so the left side is
    `≥ (16L/η)·e^{−η/8}·(1 − 1/T)`; Corollary 1's `η = ⌊L/(C+D)⌋` (verified verbatim on p9) gives
@@ -1941,8 +1948,8 @@ Results (all with 20 000–30 000 random trials):
 | Eq (16) | `Σ x·P_x` vs closed form | max abs diff `1.8e−13` ✓ |
 | Eq (15) | `Σ P_x = 1` | max abs diff `1.4e−15` ✓ |
 | Eq (21) | indicator form vs case form of the likelihood | max abs diff `0` (exact) ✓ |
-| Lemma 2 Eq (23) | `LHS / (2δ·|Δθ|)` | max `1.0000000000000113` — **tight** (trap P-4) |
-| Lemma 2 Eq (24) | `LHS / ((δ(δ−1)/2 + δ(λ+δ))·|Δθ|)` | max `1.0000000000000226` — **tight** |
+| Lemma 2 Eq (23) | `LHS / (2δ·|Δθ|)` | max `1.0000000000` — **tight** (trap P-4) |
+| Lemma 2 Eq (24) | `LHS / ((δ(δ−1)/2 + δ(λ+δ))·|Δθ|)` | max `1.0000000000` — **tight** |
 | Eq (25) | `sup_{[0,1]} |f'|` for `f(θ)=θ(1−θ)^x`, `x=0..59` | `1.0` — claim `≤1` ✓ (trap P-3) |
 | Eq (39) | `max_m (Σ_{l<m} 1/√(l+1))/(2√m)` | `0.988516` — the `2√m` is sharp up to `1.2%` ✓ |
 | Eq (38) constant | symbolic expansion of `½C² + (2C²+2CD+C)L` | `= (½C² + LC) + 2C(C+D)L` **exactly** (see below) |
@@ -1969,11 +1976,11 @@ Two lessons, both now traps (P-22, P-23 in §6):
 
 * **Check a parametrised identity at a value where the two candidate forms differ.** `ρ = 1` is
   the unique fixed point of this bug; `ρ = 1.4` would have exposed it immediately.
-* **The failing regime is `ρ → ∞`, and no finite grid shows it.** `sup_ρ m(ρ)` is a *limit*, not an
-  attained maximum — a grid over `ρ ≤ 100` reads `0.882745 < 0.882497`, i.e. "holds". The
-  conclusion `c < 1/8` is only visible from the closed-form crude bound
-  `max((1+t)e^{−t}, te^{1−t})` with `t = ρs`, where `ρ` drops out entirely. Any numerical
-  verification of this claim **must** be done on the `t`-parametrisation, not on a `ρ`-grid.
+* **The supremum is a `ρ → ∞` limit.** `sup_ρ m(ρ)` is a *limit*, not an
+  attained maximum — a grid over `ρ ≤ 100` reads `0.882745`, below the `0.8839970429` limit; both
+  exceed `e^{−1/8} = 0.882497`, so the grid already reads "fails", and the exact ceiling
+  `c = 0.123302 < 1/8` comes only from the closed-form crude bound `max((1+t)e^{−t}, te^{1−t})`,
+  `t = ρs`, where `ρ` drops out. Numerical verification **must** use the `t`-parametrisation, not a `ρ`-grid.
 
 Both forms of the identity are exact and were re-verified symbolically:
 `B(1−u) = A(u)·(ρ(1−u))^{1−ρ}·(1+ρu)^{ρ−1}`.
@@ -2006,7 +2013,7 @@ The two "tight" rows are the reason `cards/R9.md` does **not** attempt to sharpe
   * `Assembly.sum_range_inv_sqrt_le` (R14) → the R16 group, which consumes it as the Eq (39) input.
   * `StateBound.tail_le_eps` (R12a) → the R10 group, which consumes `δ ≤ C` as a hypothesis.
 * **Cross-pollination.**  No workstream writes another's tactics; the coordinator aggregates
-  intermediate results and redistributes them.  Traps P-1…P-17 in §6 are such
+  intermediate results and redistributes them.  Traps P-1…P-74 in §6 are such
   redistributions — each was found in one workstream and is on the critical path of another.
   Two (P-15, P-17) were found *independently twice*, which is why they carry an explicit note.
 * **Human judgement at the top only.**  No human tactic-writing was requested or used.  The only
@@ -2027,12 +2034,20 @@ cd lean4
 ./scripts/check_axioms.sh
 ```
 
-It (a) builds the root module, (b) elaborates `TSDPP/Audit.lean` and rejects any elaboration error,
-(c) accounts for **every** `#print axioms` line by name — a declaration Lean reports nothing about
-has an *empty* axiom set, which passes, while a verdict for a name not in `Audit.lean` fails —
-and rejects any declaration depending on an axiom outside `{propext, Classical.choice, Quot.sound}`,
-and (d) scans every source file for `sorry`/`admit`/`native_decide`/`unsafe` **outside comments**
-(block comments in Lean nest, so the scan uses `scripts/scan_forbidden.py` rather than a regex).
+It (a) builds the root module, (b) runs `axiom-audit` over the whole `TSDPP` library against the
+allowlist `{propext, Classical.choice, Quot.sound}`, (c) scans every source file for
+`sorry`/`admit`/`native_decide`/`unsafe`/`axiom`/`opaque` **outside comments**, and (d) enforces
+the import closure: every `TSDPP/*.lean` reachable from the root module.
+
+The axiom audit reads the compiled kernel environment rather than the text of `#print axioms`, so
+it sees axioms reached through imports and through `private` declarations, and it covers every
+declaration in the library instead of a hand-maintained list.  It replaced a text audit whose list,
+name-accounting regex, and coverage bookkeeping are described below; those are kept as the record
+of a real defect class, not as current behavior.  Two constructs an environment audit structurally
+cannot see are why the source scan stays: `unsafe` and `opaque` without a value never surface as
+axioms (measured on Lean v4.35.0-rc2 / axiom-audit 0b885d88 — both are reported "all within the
+allowlist").  Block comments in Lean nest, so the scan uses `scripts/scan_forbidden.py` rather than
+a regex.
 
 Two cautions about this gate, both learned the hard way (traps P-20, P-21):
 
@@ -2055,7 +2070,8 @@ The individual steps, if you want them separately:
 ```
 export PATH="$HOME/.elan/bin:$PATH"
 lake build                                    # whole development
-lake env lean TSDPP/Audit.lean                # the raw #print axioms report
+lake exe axiom-audit --root TSDPP             # the axiom allowlist audit
+lake env lean TSDPP/Audit.lean                # the raw per-theorem report (not the gate)
 python scripts/scan_forbidden.py              # the comment-aware source scan
 python ../scripts/numeric_check.py            # the falsifiers of §8
 ```

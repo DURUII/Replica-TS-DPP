@@ -1,7 +1,11 @@
 /-
+Copyright (c) 2026 TSDPP contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+-/
+/-
 Lemma 5 of the paper (Eq. (31)), on the paper's *own* range `0 ≤ r ≤ 1`.
 
-Statement (paper.pdf p.9): if `X ~ Beta(α,β)` and `Y` is an independent copy then, for all
+Statement (the paper, Eq (31)): if `X ~ Beta(α,β)` and `Y` is an independent copy then, for all
 `0 ≤ r ≤ 1`,  `Pr(|X - Y| ≥ r·E X) ≤ 2·e^{-α r²/8}`,  where `E X = α/(α+β)`.
 
 Route (NOT the artifact's union bound + Chernoff, which needs `1 ≤ r` and additionally fails in

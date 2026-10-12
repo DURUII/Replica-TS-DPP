@@ -62,7 +62,7 @@ disposition.  Four dispositions are possible, and only the first two count as wo
 | Lemma 1 (belief-DPP is a deterministic policy) | support only | `TSDPP.bestArm_congr` (the argmin is a function of the history) |
 | Lemma 2 (Eq (23),(24) Lipschitz bounds) | closed | `TSDPP.l1_lipschitz`, `firstMoment_lipschitz` |
 | Lemma 3 (regret decomposition, [28]) | **closed** | `TSDPP.sum_range_blocks`, `regret_decomp`, `episodeOf`, `regret_decomp_episodeOf` — the hypothesis `hdecomp` is derived, not assumed |
-| Lemma 4 (per-episode decomposition, [28]) | **closed** | `TSDPP.simulation_lemma` (Eq (30)'s telescoping, on an arbitrary filtered probability space) and `TSDPP.bellman_step_le` (which derives `simulation_lemma`'s `hrec` from the two value recursions) — the hypothesis `hper` is derived, not assumed |
+| Lemma 4 (per-episode decomposition, [28]) | **closed** | `TSDPP.simulation_lemma` (Eq (30)'s telescoping, on an arbitrary filtered probability space) and `TSDPP.bellman_step_le` (which derives `simulation_lemma`'s `hrec` from the two value recursions) — `hrec` is derived, but Lemma 4 is not instantiated, so the `hper` premise stays assumed (GAP-7) |
 | Lemma 5 (concentration, [45]) | **NOT CLOSED — the registered form is FALSE** (traps P-64, P-67) | the union bound reduces it to `TSDPP.unionWitness` plus the Beta–Gamma ratio law, and that reduction is correct; but the artifact adopted `r ≥ 1` where the paper states `0 ≤ r ≤ 1`, and on `r ≥ 1` the bound fails exactly (`(2,200,10)` vs `11/100`; `(1,100,10)` vs `1/8`).  The paper's own range is true but unreachable by this method; see §3.4.  **P-67**: on Eq (33)'s own curve `r = max{1,√(8 log T/α)}` the **paper's** `1/8` fails too (5 of 6 sampled tuples, incl. `α=1, T=10⁶`), so the paper's *use* is false on its own settings |
 | Lemma 6 (state bound `X_i(t) ≤ D`) | closed | `TSDPP.tail_le_eps` |
 | Corollary 1 (`α^l_i ≥ η·l`) | **hypothesis** | premise `hηl` of `theorem2_rate`; **GAP-3**.  The premise captures *only* the inequality `α^l_i ≥ η·l`; the identification `η = ⌊L/(C+D)⌋` it is advertised as standing for is not formalized |
@@ -89,9 +89,7 @@ and `bestArm_congr`: the paper's Lemma 1 asserts the belief-DPP policy is a dete
 function of the history, which is exactly the assertion that the argmin used by the policy is
 attained (`bestArm_spec`) and depends only on its index argument (`bestArm_congr`).
 
-**Two rows are not closed, and they are not the same kind of gap.**  Lemma 3 and Lemma 4 are
-derived, not quoted — `regret_decomp_episodeOf` for Lemma 3,
-and `simulation_lemma` + `bellman_step_le` for Lemma 4.  What remains is:
+**Two rows are not closed, and they are not the same kind of gap.**  Lemma 3's combinatorial half and Lemma 4's decomposition are derived, not quoted — `regret_decomp_episodeOf` for Lemma 3, `simulation_lemma` + `bellman_step_le` for Lemma 4 — but Lemma 4 is not instantiated, so its `hper` premise stays a hypothesis (GAP-7).  What remains is:
 
 * **Lemma 5** (from [45]) — not a *hypothesis*, but **refuted in the form the artifact
   registered, and the gap is not a constant** (trap P-64, §3.4).  It is reduced to an
@@ -221,7 +219,7 @@ the **same `≤` direction**, over `θ, θ' ∈ [0,1]` closed (the paper's inter
 handled explicitly, trap P-3).
 
 **These constants are tight and the development knows it.** `scripts/numeric_check.py` maximises
-`|LHS|/|θ−θ'|` and returns `1.0000000000000113` for Eq (23) and `1.0000000000000226` for Eq (24).
+`|LHS|/|θ−θ'|` and returns `1.0000000000` for Eq (23) and `1.0000000000` for Eq (24), the script's ten-decimal print.
 A formalization that silently *loosened* either constant would pass `lake build` and still be
 faithful in direction — which is why tightness is checked numerically and recorded. Conversely, a
 downstream step that *needs* the tight constant (Eq (38) does) would be broken by a loosening, so
@@ -289,11 +287,11 @@ general exponent constant `c > 0` (`c·η` in place of the paper's `η/8`). The 
 |---|---|
 | direction | `≤` throughout, as in the paper |
 | is `L³T log T` present? | yes — as `L³·(m·L)·log T`, i.e. `L³T log T` under `T = mL` |
-| is the constant explicit? | yes — `8`; near-tight, since the explicit witness `L = m = logT = η = 1`, `B = √log T` gives `2√(100/11)+1 = 7.0303`, and `7` — valid at the paper's `2√8+1 = 6.657` — is refuted by it (trap P-19) |
+| is the constant explicit? | yes — `8`; near-tight, since the explicit witness `L = m = logT = η = 1`, `B = √log T` gives `2√(100/11)+1 = 7.0302`, and `7` — valid at the paper's `2√8+1 = 6.657` — is refuted by it (trap P-19) |
 | is the tail hidden? | no — `B` is an explicit parameter with `0 ≤ B` and `B ≤ √log T` as hypotheses |
 | numerical falsification | 0 violations over a grid at the `hηT`/`hBle` boundaries; `eq39_collapse` attains `0.889` of its bound |
 
-The one thing *not* machine-checked is the passage to `O(·)` — see §4.
+The passage to `O(·)` is machine-checked in `TSDPP.Asymptotic` — see §4.
 
 ### Quantifier-order spot check on the headline
 
@@ -328,11 +326,7 @@ Note the last row: `ηl l = l+1` is exactly the shape Corollary 1 supplies
 (`α^l_i ≥ η·l`), so the hypothesis is not an artefact of the proof — it is the paper's own
 intermediate result.
 
-Of the three citation nodes, **two are not hypotheses**: `L34` (Lemma 3+4 of [28]) is
-**derived** — `regret_decomp_episodeOf`, `simulation_lemma`, `bellman_step_le` — and `L5` (Lemma 5
-of [45]) is reduced to an elementary union bound with a fixed witness (§3.4). Only `L5`'s
-constant and the Corollary 1 premise `hηl` remain unreached, and both are *visible in the
-statement*.
+Of the two citation nodes (`L34`, `L5`), **neither is an axiom and neither is fully discharged**: `L34` (Lemma 3+4 of [28]) has its Lemma 3 half derived (`regret_decomp_episodeOf`) and Lemma 4 proved (`simulation_lemma`, `bellman_step_le`), but Lemma 4 is not instantiated, so its `hper` premise stays a hypothesis (GAP-7); and `L5` (Lemma 5 of [45]) is reduced to an elementary union bound with a fixed witness (§3.4), but the target it was registered against is **false** on `r ≥ 1`. Only `L5`'s constant, `L34`'s `hper`, and the Corollary 1 premise `hηl` remain unreached, and all are *visible in the statement*.
 
 This distinction matters for fidelity: an `axiom` would make the surrounding theorem true by fiat
 and hide what is assumed; a hypothesis makes the dependence visible to a reader. A reader who does
@@ -537,15 +531,15 @@ reproduced independently at 40 dps — see `DESIGN.md` P-64 for the table and th
 | `(α, β, r)` | `Pr(\|X−Y\| ≥ rα/(α+β))` exact | vs `11/100` | vs the paper's `1/8` |
 |---|---|---|---|
 | (1, 100, 10) | 2.809651246898e−05 | holds | **fails 3.77×** |
-| (2, 200, 10) | 8.606640056681e−09 | **fails 15.43×** | fails 311× |
-| (5, 500, 10) | 3.658586854855e−19 | **fails 1.4e5×** | fails 2.6e8× |
+| (2, 200, 10) | 8.606640056681e−09 | **fails 15.43×** | fails 309.86× |
+| (5, 500, 10) | 3.658586854855e−19 | **fails 1.4e5×** | fails 2.545e8× |
 
 So the artifact did **not** inherit a harmless inconsistency: it inherited the paper's out-of-range
 application and then *formalized that application*.  The honest statement of the position is:
 
 * the paper's Lemma 5, **as printed** (`0 ≤ r ≤ 1`, `c = 1/8`), is **true** — a sweep of
   `α ∈ [0.5, 200]`, `ρ ∈ [0.1, 1000]`, `r ∈ [0.1, 1]` gives `min c_eff = 0.242848` at the corner `(200,200000,1)`, clearing `1/8` by
-  +0.113;
+  +0.118;
 * the paper's **application** of it at `r = max{1, √(8 log T/α)}` is **false** from `T ≈ 10⁵`
   (`(α,β) = (1,100)`, `T = 10⁶` ⟹ `r = 10.513`, `c_eff = 0.10623 < 1/8`);
 * the artifact's registered target — the application, at `c = 11/100` and `r ≥ 1` — is **false**.
@@ -585,7 +579,7 @@ Everything downstream that mentions the radius follows mechanically:
 **The final constant moves `7 → 8` for a reason that is invisible in the first summand.** The
 intermediate bound is `2√(K₀Z) ≤ 7√Z` and it *survives*: `2√(100/11) = 6.030227 ≤ 7` with `0.97` of
 slack, and the proof step needs only `100/11 ≤ 49/4 = 12.25`. It is the tail's `+1` that crosses:
-`2√(100/11) + 1 = 7.030226`, so the constant `7 = 6 + 1` (valid at the paper's `2√8 + 1 = 6.656854`)
+`2√(100/11) + 1 = 7.030227`, so the constant `7 = 6 + 1` (valid at the paper's `2√8 + 1 = 6.656854`)
 becomes `8 = 7 + 1`. Both numbers are checked, and the check that matters is the *second* one —
 this is trap P-19 re-armed (see P-19 and P-48).
 
@@ -609,16 +603,15 @@ larger radius.
 
 ## 4. The bridge from the formal bound to Theorem 2's `O(·)`
 
-**The concrete bound is machine-checked; only its restatement as `O(·)` is not.**
+**The concrete bound and its restatement as `O(·)` are both machine-checked.**
 
 `TSDPP.theorem2_concrete` (in `lean4/TSDPP/Theorem2.lean`) is a Lean theorem, sorry-free and
 depending only on the three kernel axioms:
 
   `|BR| ≤ K · 8 · √( L³ · (m·L) · log T / η )`,  `T = m·L`,  `K = C²/2 + (2C²+2CD+C)·L`
 
-What is *not* a Lean theorem is the step from this to the paper's `BR(T) = O(√(L³T log T))`.  That
-step is arithmetic on the constant, written out below and carried out by hand.  It is isolated
-here so it cannot be mistaken for checked work.
+The step from this to `BR(T) = O(√(L³T log T))` is arithmetic on the constant, written out below;
+it is *also* a Lean theorem, in `TSDPP.Asymptotic` (the fixed-`L` reading of GAP-4).
 
 **Derive.** Since `K = C²/2 + (2C²+2CD+C)·L ≤ K'·L` for `K' = C²/(2L) + (2C²+2CD+C)` — a constant
 in `T` whenever `C`, `D` are `T`-free (GAP-3, which the paper asserts) — and since
@@ -649,15 +642,19 @@ the two constants the radius carries.
 | `K ≤ K'·L` with `K' = ½C² + (2C²+2CD+C)` | **Lean theorem** — `TSDPP.regretCoeff_le_mul` |
 | `|BR| ≤ c·L·√(L³T log T/η)`, `c = 8K'` | **Lean theorem** — `TSDPP.theorem2_rate` |
 
-`theorem2_rate` is the paper's rate with the coefficient `c` written out, and it is obtained from
-`theorem2_concrete` by the single application of `regretCoeff_le_mul`.  So there is **no remaining
-hand arithmetic in the constant**: every step of §4 is a Lean declaration.
+`theorem2_rate` is the paper's rate with the coefficient `c` written out, obtained from
+`theorem2_concrete` by the single application of `regretCoeff_le_mul`: every step of §4 is a Lean
+declaration.
 
-What is *not* formalized is the passage from `c·L·√(L³T log T/η)` to the `O(·)` symbol itself.
-That step is bookkeeping over an undefined notion — `O(·)` needs a filter on `T` and a decision
-about whether `L` grows with `T` (GAP-4), and the paper commits to neither.  Substituting any
-consistent convention into `theorem2_rate` is mechanical; choosing the convention is a modelling
-decision, not a mathematical one, and it is left to the reader rather than silently fixed.
+The passage from `c·L·√(L³T log T/η)` to the `O(·)` symbol itself is formalized in
+`lean4/TSDPP/Asymptotic.lean`.  `O(·)` needs a filter on `T` and a decision on whether `L` grows
+with `T` (GAP-4), which the paper never fixes; the artifact adopts the fixed-`L` reading and
+proves `sqrt_L3TlogT_isTheta` (`√(L³·T·log T) =Θ[atTop] √(T·log T)` for fixed `L`) together with
+`bound_isBigO_sqrt_log` and `bound_isBigO_in_episodes`, which carry `theorem3_rate`'s right-hand
+side to `=O[atTop]` with the constant `c·L·√(L³/η)` exhibited.  That convention is the one modelling
+decision here, now stated rather than left to the reader.  The growing-`L` reading is a different
+class (the bound's own factor `L·√(L³/η)` grows like `L^{5/2}` at fixed `c`, `η`), which the module
+records but does not take.
 
 ---
 
@@ -670,11 +667,10 @@ decision, not a mathematical one, and it is left to the reader rather than silen
 | **vacuous** (unsatisfiable hypotheses) | §2 satisfiability audit | no — every non-trivial hypothesis has an exhibited witness |
 | **shifted** (wrong direction / quantifier order) | §1 direction column, §3 | no — the only divergences (§3) are documented, forced, and do not alter the conclusion |
 | **axiom smuggling** | `TSDPP/Audit.lean` | no — `#print axioms` ⊆ `{propext, Classical.choice, Quot.sound}` for every headline theorem; the two citation nodes are hypotheses, not axioms |
-| **the `O(·)` claim itself** | §4 | **yes, up to the notation** — `TSDPP.theorem2_rate` is a machine-checked Lean theorem of the form `\|BR\| ≤ c·L·√(L³T log T/η)` with `c` explicit and `T`-free.  Passing to the `O(·)` *symbol* requires choosing a convention the paper never fixes (GAP-4); that is a modelling decision, not a mathematical gap |
+| **the `O(·)` claim itself** | §4 | **yes — machine-checked, under one stated convention** — `TSDPP.theorem2_rate` gives `\|BR\| ≤ c·L·√(L³T log T/η)` with `c` explicit and `T`-free, and `TSDPP.Asymptotic` carries it to `=O[atTop]` on the fixed-`L` reading of GAP-4.  The `L`-fixed convention is a modelling decision the paper never fixes, stated here rather than left implicit |
 
-The last row is the honest boundary of this artifact.  Everything the paper *derives* is
-machine-checked, up to and including the headline `theorem2_concrete`; what remains by hand is
-naming the asymptotic constant, not establishing the rate.
+The remaining caveat is the choice of `L`-convention, not a hand-carried step: everything the paper
+*derives* is machine-checked, up to and including `theorem2_concrete` and its passage to `O(·)`.
 
 **Also checked, and worth stating:** the headline bound is falsified numerically as well as
 proof was trusted — `eq39_collapse` attains `0.889` of its bound and `theorem2_concrete` has zero

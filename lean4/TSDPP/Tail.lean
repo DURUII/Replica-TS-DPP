@@ -1,5 +1,5 @@
 /-
-Copyright: formal artifact for INFOCOM'26 `infocom26.pdf`.
+Copyright (c) 2026 TSDPP contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 
 # The exponential tail of paper Eq (40), first half

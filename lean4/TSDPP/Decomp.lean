@@ -1,5 +1,5 @@
 /-
-Copyright: formal artifact for INFOCOM'26 `infocom26.pdf`.
+Copyright (c) 2026 TSDPP contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 
 # L3 — Lemma 3, the regret decomposition, no longer a hypothesis

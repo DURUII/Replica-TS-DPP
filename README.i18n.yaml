@@ -2,5 +2,5 @@
 # confirmed-consistent state.  Both languages carry equal authority; after editing
 # either side, bring the other along and re-record with:
 #   python scripts/verify_translation_pairing.py --write README.md
-README.md: 28d418d1a1ca801f03a7755b4a20f98cabecfc41
-README.zh.md: 1111dec554050c1c0a8e5d4cf0e91dac5657b029
+README.md: 49e1897a8c3cb34beb2030b5d3759866400d1443
+README.zh.md: e6350b74ebcbcbcccbfb054eb74ec5d1b02e2b2a

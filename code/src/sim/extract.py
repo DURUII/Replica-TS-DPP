@@ -1,5 +1,9 @@
 """Turn the Kaggle CSV into the per-second event bitmaps that Fig. 5 replays.
 
+Source: the REES46 Marketing Platform eCommerce dataset, published on Kaggle by Michael
+Kechinov as `mkechinov/ecommerce-events-history-in-cosmetics-shop`, whose licence Kaggle
+lists as "Data files (c) Original Authors". The raw files are not redistributed here.
+
     curl -L -o /tmp/cosmetics.zip \
       "https://www.kaggle.com/api/v1/datasets/download/mkechinov/ecommerce-events-history-in-cosmetics-shop"
     unzip -d /tmp/cosmetics /tmp/cosmetics.zip        # five monthly CSVs

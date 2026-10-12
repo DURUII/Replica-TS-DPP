@@ -1,4 +1,4 @@
-"""Matplotlib style, measured off the paper's own panels (pages/p06.png, pages/p07.png).
+"""Matplotlib style, measured off the paper's own panels (Fig. 3, Fig. 4, Fig. 5).
 
   markers   Lyapunov ^ (red) | Whittle D (green) | Belief-DPP oracle s (orange)
             | TS-DPP o (blue)   -- the four matplotlib default colour slots, so the

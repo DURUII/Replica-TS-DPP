@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Numeric FALSIFIER for the analytic claims of infocom26.pdf.
+"""Numeric FALSIFIER for the analytic claims of the paper (Zhou, Xu, Xu, Xiao, Wu, INFOCOM 2026).
 
 Falsifiers, not proofs.  A pass means "no counterexample found in N random trials";
 a fail means "the paper's constant is wrong".  Run before writing any Lean.

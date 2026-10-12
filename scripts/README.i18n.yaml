@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record: the git blob hash of each side as of the last
+# confirmed-consistent state.  Both languages carry equal authority; after editing
+# either side, bring the other along and re-record with:
+#   python scripts/verify_translation_pairing.py --write scripts/README.md
+README.md: 77fafa5e227ff59c75438dae7728236bc535c5be
+README.zh.md: 43dee5c75f6cf5ae323f7fa00886936c312b1eff

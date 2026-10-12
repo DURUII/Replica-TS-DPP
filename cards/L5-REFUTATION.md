@@ -1,7 +1,7 @@
 # L5-REFUTATION — the registered Lemma 5 target is FALSE
 
 **Status: CLOSED (machine-checked).**  All five nodes are closed.  The refutation is
-`lean4/TSDPP/Lemma5Refutation.lean`, unconditional, audited by `lean4/scripts/check_axioms.sh` against `Audit.lean`; each declaration depends on nothing or on a subset of `{propext, Classical.choice, Quot.sound}`.
+`lean4/TSDPP/Lemma5Refutation.lean`, unconditional, audited by `lean4/scripts/check_axioms.sh`; each declaration depends on nothing or on a subset of `{propext, Classical.choice, Quot.sound}`.
 This card is the *refutation* counterpart of `L5.md`: that card asks "is the registered target
 provable?", this one answers "no, and here is the certificate".
 
@@ -22,7 +22,7 @@ apart, and they have three different answers:
 | # | claim | verdict |
 |---|-------|---------|
 | 1 | the registered `r ≥ 1` target, `c = 11/100` | **FALSE** — machine-checked, `lemma5_as_registered_is_false` |
-| 2 | the **paper's own Lemma 5**, stated for `0 ≤ r ≤ 1` (`paper.pdf` p. 9 Eq (31)) | **not refuted — and almost certainly true** |
+| 2 | the **paper's own Lemma 5**, stated for `0 ≤ r ≤ 1` (Eq (31)) | **not refuted — and almost certainly true** |
 | 3 | the paper's **theorem** (its regret bound) | **not refuted, and not refutable from what is here** |
 
 Why (2) survives.  The witness sits at `r = 14`, entirely outside the paper's declared range.  On
@@ -43,8 +43,8 @@ Lemma 5 is invalid — not that the paper's theory is false.**
 
 Two honest footnotes on how much of this is *proved* versus *argued*:
 
-* That the paper's Lemma 5 is stated for `0 ≤ r ≤ 1` is a **textual** fact (quoted above from
-  `paper.pdf` p. 9), not a Lean theorem.  Nothing in this repo formalizes the paper's prose.
+* That the paper's Lemma 5 is stated for `0 ≤ r ≤ 1` is a **textual** fact (Eq (31)), not a Lean
+  theorem.  Nothing in this repo formalizes the paper's prose.
 * The `0.393` worst-ratio sweep and the `r → 0⁺ ⟹ ratio → 1/2` ceiling are **numerical and
   analytic arguments, not machine-checked**.  They say the paper's Lemma 5 is *not obviously false*;
   they do not prove it.  This card does not claim it as a Lean result, and no card should.
@@ -224,7 +224,7 @@ and `1 − (100/101)^100 = 0.63028878767088073882`, the **operational** comparis
 | candidate `c` | operational slack `(1 − (100/101)^100)/c` | Taylor terms needed for the `exp` step |
 |---|---|---|
 | `5/8 = 0.625` | `1.0084620602734091821…` — **0.85%** | `n = 5` (`Σ_{i<4} = 2.641996 < 8/3 = 2.666667`) |
-| `3/5 = 0.600` | `1.0504814594514678980…` — **5.05%** | `n = 4` (`Σ_{i<4} = 2.641996 > 5/2 = 2.500000`) |
+| `3/5 = 0.600` | `1.0504813127848012314…` — **5.05%** | `n = 4` (`Σ_{i<4} = 2.641996 > 5/2 = 2.500000`) |
 
 The weaker constant is the better proof, so `3/5` (from `(100/101)^100 ≤ 2/5`) is the one briefed.
 **[Figure discipline, per P-69: the two slacks are quoted as the explicit ratio
@@ -238,7 +238,7 @@ Slacks along the chain, all as explicit ratios:
 | link | ratio | 
 |---|---|
 | `(86/101)^100 / exp(−750/43)` | `3.9139159961567850136…` |
-| `(1 − (100/101)^100) / (3/5)` | `1.0504814594514678980…` |
+| `(1 − (100/101)^100) / (3/5)` | `1.0504813127848012314…` |
 | `exp(4427/1075) / (10/3)` | `18.433445974203351667…` |
 | `LB / RHS` (overall) | `75.7890322696441306875…` |
 | `P_true / RHS` (independent, §4) | `353.47904748601156244…` |

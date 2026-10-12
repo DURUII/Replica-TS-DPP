@@ -1,5 +1,5 @@
 /-
-Copyright: formal artifact for INFOCOM'26 `infocom26.pdf`.
+Copyright (c) 2026 TSDPP contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 
 # Asymp — Theorem 2's `O(·)`, formalized rather than left as notation
@@ -82,8 +82,9 @@ theorem sqrt_L3TlogT_isTheta {L : ℝ} (hL : 0 < L) :
 `c·L·√(L³·T·log T/η)`, is `O(√(T·log T))` as `T → ∞` with `L`, `η`, `c` held fixed.
 
 Combined with `theorem3_rate` this is the paper's `BR(T) = O(√(T log T))` under the fixed-`L`
-reading; under the growing-`L` reading the same proof gives `O(L^{3/2}√(T log T))` instead, since
-then `√(L³)` is not a constant.  The constant exhibited below is `c·L·√(L³/η)`, which is precisely
+reading; under the growing-`L` reading the paper's printed factor `√(L³·T·log T)` is
+`L^{3/2}√(T log T)`, while this module's bound carries the further factor `L` and is
+`Θ(L^{5/2}√(T log T))` at fixed `c`, `η`.  The constant exhibited below is `c·L·√(L³/η)`, precisely
 the factor that would have to be re-examined if `L` grew. -/
 theorem bound_isBigO_sqrt_log {L η c : ℝ} (hL : 0 < L) (hη : 0 < η) :
     (fun T : ℝ => c * L * Real.sqrt (L ^ 3 * T * Real.log T / η))

@@ -1,17 +1,26 @@
 /-
-Copyright: formal artifact for INFOCOM'26 `infocom26.pdf`.
+Copyright (c) 2026 TSDPP contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 
 # Axiom audit
 
 `CLAUDE.md` forbids closing a goal with an axiom, `native_decide`, `unsafe` or floats.  This
-file is the machine-checkable part of that promise: for every headline theorem it prints the
-axioms the declaration actually depends on.  Every line must read exactly
+file is the human-readable part of that promise: for every headline theorem it prints the axioms
+the declaration actually depends on.  Every line must read exactly
 
   `'TSDPP.<name>' depends on axioms: [propext, Classical.choice, Quot.sound]`
 
-and in particular must never mention `sorryAx`.  `lean4/scripts/check_axioms.sh` greps the
-output of `lake env lean TSDPP/Audit.lean` and fails if any line deviates.
+and in particular must never mention `sorryAx`.  Read it with `lake env lean TSDPP/Audit.lean`.
+
+This file is no longer what the gate reads.  `lean4/scripts/check_axioms.sh` now delegates the
+audit to `axiom-audit` (`lake exe axiom-audit`), which reads the compiled kernel environment and
+covers the whole library — every declaration, including `private` ones and axioms reached through
+imports — rather than the hand-maintained list below.  The list is kept because its comments carry
+the deliberation behind each scope decision (which theorem is audited, which is only a reduction,
+which declaration is not instantiated), and because one line per theorem is still the fastest way
+for a human to see the shape of the result.  The older rationale for the list as the *gate* (the
+empty-axiom-set case, primed names) is preserved in `DESIGN.md` §10 and in the git history of
+`scripts/check_axioms.sh`.
 
 Note this file is deliberately **not** imported by `TSDPP.lean`: `#print axioms` is a command,
 not a declaration, so importing it from the root module would put audit output in every build.
@@ -124,7 +133,9 @@ import TSDPP
 --
 -- [2026-09-17 — trap P-64: "satisfiable" above must NOT be read as "the bound is fine".]  The
 -- registered target is FALSE on `r ≥ 1`: at `(α,β,r) = (2,200,10)` the exact probability is
--- 8.6066e−09 against a bound of `2e^{−22} = 2.7895e−10`.  The two statements are consistent —
+-- 8.6066e−09 against a bound of `2e^{−22} = 5.5790e−10`.  (The per-tail requirement used further
+-- down is `e^{−22} = 2.789e−10`, half of this; the two are different quantities, see trap P-72.)
+-- The two statements are consistent —
 -- `hnum` is satisfiable only in the vacuous region `ρ ≤ r-1`, and `ρ = 100` is far outside it —
 -- but the wording above ("satisfiable for every r ≥ 1") is exactly the kind of sentence that reads
 -- as a positive status report, and it is not one.  Outside the vacuous region the antecedent is
@@ -183,7 +194,9 @@ import TSDPP
 -- section that the old `IN_FLIGHT` exemption made impossible — the module was outside the root
 -- closure, so `Audit.lean` (which imports only `TSDPP`) could not resolve these names at all, and
 -- twelve public declarations were compiled by nothing and checked by nothing.  Wired in, exemption
--- deleted; `scripts/check_axioms.sh` now *requires* every closure module to be represented here.
+-- deleted.  (The gate no longer reads this file: `axiom-audit` audits the module directly, and the
+-- closure invariant is checked in `scripts/check_axioms.sh`.  This section is kept as the
+-- per-theorem report of what the module contributes and why it belongs in the closure at all.)
 --
 -- The module's nine helpers (`rpow_beta_eq`, `numA'`, `numB'`, …) are `private`, i.e. file-scoped in
 -- Lean 4: their mangled names are not importable, so they cannot be named here and are not audited.
@@ -206,9 +219,10 @@ import TSDPP
 -- `TSDPP.gamma_ratio_isBetaMeasure`.  They are audited separately rather than assumed equal to the
 -- primed-free ones above, since discharging `hmap` is a real proof step (`Measure.map` bookkeeping),
 -- not a rename.  Note a trailing `'` is part of the *name*: `#print axioms` echoes it as
--- `'TSDPP.betaMeasure_Ici_chernoff'' depends on axioms: [...]`, which is why the reporting regex in
--- `scripts/check_axioms.sh` must admit `'` in a name (it previously did not, and silently filed
--- every primed name under "EMPTY axiom set").
+-- `'TSDPP.betaMeasure_Ici_chernoff'' depends on axioms: [...]`.  The retired text audit's name regex
+-- had to admit `'` for this reason (it previously did not, and silently filed every primed name under
+-- "EMPTY axiom set"); that regex is gone with the text audit, but the fact is worth keeping, because
+-- a name is data and not a label.
 #print axioms TSDPP.betaMeasure_Ici_chernoff'
 #print axioms TSDPP.betaMeasure_Iio_chernoff'
 #print axioms TSDPP.betaMeasure_prod_abs_sub_le_small'
@@ -226,7 +240,7 @@ import TSDPP
 -- and the paper's own `1/8`).
 --
 -- **SCOPE, and it is not a formality.**  What is refuted is the `r ≥ 1` statement — the one this
--- artifact registered.  The paper states its Lemma 5 for `0 ≤ r ≤ 1` (`paper.pdf` p. 9 Eq (31)),
+-- artifact registered.  The paper states its Lemma 5 for `0 ≤ r ≤ 1` (Eq (31)),
 -- and the witness sits at `r = 14`, outside that range, so the paper's own Lemma 5 is NOT refuted
 -- here; nor is the paper's theorem, since a proof step that does not go through does not make a
 -- theorem false.  See the header of `TSDPP/Lemma5Refutation.lean` and `cards/L5-REFUTATION.md` §0.
@@ -248,7 +262,7 @@ import TSDPP
 --
 -- Complementary to the block above, and easy to confuse with it.  `Lemma5Refutation.lean` *refutes*
 -- the registered statement on `r ≥ 1`; this module works the paper's own range `0 ≤ r ≤ 1`
--- (`paper.pdf` p. 9 Eq (31)) and does **not** close it.  `betaMeasure_prod_abs_sub_le_of_mgf` is
+-- (Eq (31)) and does **not** close it.  `betaMeasure_prod_abs_sub_le_of_mgf` is
 -- conditional on `BetaProdMGFBound` — a `def … : Prop` carried as an explicit hypothesis, never an
 -- axiom — so what is audited here is a *reduction*, exactly as in the `BetaConcentration` block.
 -- `betaMeasure_prod_abs_sub_le_of_log2` is unconditional but covers only `α r² ≤ 8 log 2`, where the

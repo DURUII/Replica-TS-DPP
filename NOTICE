@@ -1,0 +1,10 @@
+TS-DPP
+Copyright 2026 安如衫 (DURUII)
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+Every file under lean4/ carries the header
+  Copyright (c) 2026 TSDPP contributors. All rights reserved.
+  Released under Apache 2.0 license as described in the file LICENSE.
+
+The paper this repository formalizes and, in part, refutes is the work of its
+own authors. It is cited, not redistributed: no copy of it is tracked here.

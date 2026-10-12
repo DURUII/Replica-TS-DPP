@@ -1,5 +1,5 @@
 /-
-Copyright: formal artifact for INFOCOM'26 `infocom26.pdf`.
+Copyright (c) 2026 TSDPP contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 
 # R16 — Theorem 2's final rate, `BR(T) = O(√(L³ T log T))`
@@ -30,7 +30,7 @@ Three facts do the work, none of them about bandits:
    confidence radius is paid for by the excess `L² ≥ 1` inside the radical.  This is the only
    place the constant is spent; it is why the explicit constant below is `8 = 7 + 1` rather
    than `7` (see `DESIGN.md` §6 trap P-19: the pair `L = m = η = log T = 1`, `B = 1` refutes
-   any constant `< 2√(100/11) + 1 = 7.0303`, so `7` — which was valid at the paper's `2√8 + 1
+   any constant `< 2√(100/11) + 1 = 7.030227`, so `7` — which was valid at the paper's `2√8 + 1
    = 6.657` — no longer is).
 3. `hηT : η ≤ L⁴m` — the tail's `O(1)` bound `B ≤ √(log T)` is swallowed by the main
    radical exactly when `log T ≤ L³·(mL)·log T/η`, i.e. `η ≤ L⁴m`.
@@ -111,8 +111,8 @@ per-episode confidence term and `K₀ = 100/11` for the artifact's radius consta
 The `8 = 7 + 1` splits as `2L√(K₀Z) ≤ 7√(L⁴Z)` (the `L ≤ L²` slack pays for `√(100/11)`, via
 `two_mul_sqrt_ratio_le`) plus `B ≤ √(log T) ≤ √(L⁴Z)` (the hypothesis `η ≤ L⁴m`).  The paper's
 own split is `6 + 1` with `K₀ = 8`; at `K₀ = 100/11` the first summand rises to `2√(100/11) =
-6.0303`, so the same `+1` forces the constant up from `7` to `8`.  That is the only reason the
-numeral differs from the paper's, and it is *forced*: `2√(100/11) + 1 = 7.0303 > 7` (trap P-19).
+6.030227`, so the same `+1` forces the constant up from `7` to `8`.  That is the only reason the
+numeral differs from the paper's, and it is *forced*: `2√(100/11) + 1 = 7.030227 > 7` (trap P-19).
 
 Trap P-14 (again): the hypotheses `0 ≤ B` and `1 ≤ m` were in the first draft, the linter
 flagged both unused, and they were **dropped** rather than silenced — the statement is

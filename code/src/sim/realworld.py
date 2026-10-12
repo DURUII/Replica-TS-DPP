@@ -1,5 +1,9 @@
 """The real-world setting of Fig. 5: replay the e-commerce event stream.
 
+Source: the REES46 Marketing Platform eCommerce dataset, published on Kaggle by Michael
+Kechinov as `mkechinov/ecommerce-events-history-in-cosmetics-shop`, whose licence Kaggle
+lists as "Data files (c) Original Authors". The raw files are not redistributed here.
+
     python src/sim/extract.py /tmp/cosmetics/2019-Dec.csv.gz    # -> data/2019-Dec-3types.npz
 
 The paper maps each event timestamp to a 1-second slot and treats that slot as the

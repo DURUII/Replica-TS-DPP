@@ -1,5 +1,5 @@
 /-
-Copyright: formal artifact for INFOCOM'26 `infocom26.pdf`.
+Copyright (c) 2026 TSDPP contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 
 **The registered Lemma 5 target is FALSE, and this file proves it in Lean.**
@@ -17,7 +17,7 @@ form below yields the sharp threshold `c* = 0.087918604136904736052`, so **no co
 Stated plainly, because the word "refutation" invites over-reading:
 
 * This refutes the `r ≥ 1` statement.  It does **not** refute the paper's own Lemma 5, which
-  `paper.pdf` p. 9 Eq (31) states **for all `0 ≤ r ≤ 1`**.  The witness sits at `r = 14`, entirely
+  Eq (31) states **for all `0 ≤ r ≤ 1`**.  The witness sits at `r = 14`, entirely
   outside that range.  On `0 ≤ r ≤ 1` the paper's bound holds with room to spare: the worst ratio
   `Pr(|X-Y| ≥ rE(X)) / (2·exp(-αr²/8))` over a sweep of `(α, β, r)` is `0.393`, and as `r → 0⁺` the
   ratio tends to `1/2` from below, so that range cannot be violated at all.

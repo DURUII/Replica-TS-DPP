@@ -1,4 +1,8 @@
 /-
+Copyright (c) 2026 TSDPP contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+-/
+/-
 TRAPS —— GAP-7 探针。
 
 只回答一个问题:把轨迹律地基按 `rl-theory-in-lean/RLTheory/Probability/MarkovChain/Trajectory.lean`

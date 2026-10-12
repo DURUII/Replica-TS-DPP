@@ -128,7 +128,7 @@ E[e^{t(X−X')}] = M_X(t) M_X(−t) ≤ (1−t/c)^{−a}(1+t/c)^{−a} = (1−u�
 
 and `−log(1−u²) ≤ 2u²` for `|u| ≤ 1/√2` — from `−log(1−s) = Σ_{n≥1} sⁿ/n ≤ s + s²/(2(1−s)) ≤ 2s`
 for `0 ≤ s ≤ 1/2`.  So `(1−u²)^{−a} ≤ e^{2at²/c²}`, which is the residual hypothesis
-`BetaProdMGFBound` at `lean4/TSDPP/Lemma5PaperRange.lean:57`.  ∎
+`BetaProdMGFBound` at `lean4/TSDPP/Lemma5PaperRange.lean:61`.  ∎
 
 **T6 (the paper's own Lemma 5, at the paper's own `1/8`, on the paper's own range).**
 `Pr(|X−X'| ≥ r E(X))` with `E(X) = a/c`.  Markov at `t` and T5 give
@@ -140,7 +140,7 @@ symmetry, so the union of the two events costs the factor `2`:
 Pr(|X − X'| ≥ r E(X)) ≤ 2 e^{−a r²/8}        for all 0 ≤ r ≤ 1.
 ```
 
-The range is exactly the paper's (`paper.pdf` p. 9 Eq (31)), and it is exactly what T5's hypothesis
+The range is exactly the paper's (Eq (31)), and it is exactly what T5's hypothesis
 `t ≤ c/4` becomes at `t = rc/4`: `r ≤ 1`.  **No slack is spent anywhere on this chain.**  ∎
 
 ## 5. WHAT THIS CORRECTS

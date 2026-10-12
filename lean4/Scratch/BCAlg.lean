@@ -1,4 +1,8 @@
 /-
+Copyright (c) 2026 TSDPP contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+-/
+/-
 Probe: algebraic identities for the exact Chernoff optimisers of the Beta tails, in the
 α-cleared form (no nested `β/α` divisions) plus the rpow bookkeeping.
 Not part of the build; Scratch/ is excluded from `scripts/scan_forbidden.py`'s stem scan.

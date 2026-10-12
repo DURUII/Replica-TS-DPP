@@ -1,6 +1,9 @@
-"""Measure the levels of Fig. 3(a), Fig. 4(a), every Fig. 5 panel and Fig. 6 from paper.pdf.
+"""Measure the levels of Fig. 3(a), Fig. 4(a), every Fig. 5 panel and Fig. 6 from the paper.
 
-    python scripts/measure_fig_levels.py
+    python scripts/measure_fig_levels.py [--pdf PATH]
+
+The paper's camera-ready is not redistributed with this repository, so point the script at
+your own copy with --pdf or $PAPER_PDF.
 
 The paper embeds each panel as a 4500x3300 RGB image. This rasterises those panels out of
 the PDF with poppler's pdfimages, calibrates pixel rows/columns against the printed axis
@@ -44,6 +47,7 @@ linewidth 15. Fig. 6's ordinate is checked to be linear before it is calibrated 
 Requires pdfimages (poppler), numpy and Pillow. Every input is checked up front and a
 missing one aborts: a wrong or silently approximated level is worse than no level.
 """
+import argparse
 import csv
 import os
 import shutil
@@ -56,7 +60,7 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, ".."))
-PDF = os.path.join(ROOT, "paper.pdf")
+PDF = os.environ.get("PAPER_PDF", os.path.join(ROOT, "paper.pdf"))
 RESULTS = os.path.join(ROOT, "code", "results")
 
 PAGE_FIRST, PAGE_LAST = 6, 7     # Fig. 3 and Fig. 4 on page 6, Fig. 5 on page 7
@@ -299,8 +303,16 @@ def plateau(setup, name, window):
 
 
 def main():
+    global PDF
+    ap = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0])
+    ap.add_argument("--pdf", default=PDF,
+                    help="path to the paper's camera-ready PDF "
+                         "(default: $PAPER_PDF, else paper.pdf at the repository root)")
+    PDF = ap.parse_args().pdf
     if not os.path.exists(PDF):
-        sys.exit("paper.pdf not found at %s" % PDF)
+        sys.exit("camera-ready PDF not found at %s\n"
+                 "This repository does not redistribute it; pass --pdf or set $PAPER_PDF."
+                 % PDF)
 
     tmp = tempfile.mkdtemp(prefix="figlevels-")
     try:

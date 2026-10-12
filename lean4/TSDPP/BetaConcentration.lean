@@ -1,5 +1,5 @@
 /-
-Copyright: formal artifact for INFOCOM'26 `infocom26.pdf`.
+Copyright (c) 2026 TSDPP contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 
 # Concentration of the difference of two independent Beta variables (Lemma 5 / Eq (31))
@@ -106,7 +106,8 @@ and the four `'`-forms remain correct.
 ## What is *not* proved here, and why (no papering over)
 
 **The top-level target is not proved in this file — it is FALSE as registered** (see P-64 at the top
-of this header: `(α,β,r) = (2,200,10)` gives LHS `8.6066e−09` against RHS `2.7895e−10`).  Everything
+of this header: `(α,β,r) = (2,200,10)` gives LHS `8.6066e−09` against RHS `2e^{−22} = 5.5790e−10`;
+the `2.789e−10` quoted further down is `e^{−22}`, the per-tail requirement, not this bound).  Everything
 reduces to `hnum`, which is *not*
 implied by `TSDPP.unionWitness`'s `exp(-(11/100))`: that constant is exactly the target's, and the
 union bound pays for *both* tails (`A` and `B` each cost a factor, and the exchangeability factor

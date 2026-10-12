@@ -2,121 +2,111 @@
 
 [English](README.md) | 中文
 
-每张卡片一个文件。一张卡片为 **CLOSED**，当且仅当 (a) 其 Lean 声明可构建且不含 `sorry`，
-且 (b) `#print axioms` 返回 `{propext, Classical.choice, Quot.sound}` 的子集。
-下文每张卡片都记录它*消耗*的卡片，并且——这正是 DAG 的意义所在——记录**它的哪些依赖仍然
-敞开**，使读者一眼就能看出某个结论有多大一部分建立在未证明的地基之上。
+每张卡片记录一个数学命题、证明或反证思路及依赖关系。
 
-`../DESIGN.md` §3 中的状态板由 `lake build` 输出重新生成；本目录是它的可读展开。
+| 名词 | 释义 |
+| --- | --- |
+| CLOSED | 所列数学陈述已完成 Lean 证明，证明无待补步骤。 |
+| 显式假设 | 证明所需条件。例如，由每 episode 遗憾上界推导总遗憾上界 |
+| 实例化 | 检查本论文中事件发生、数据采样是否满足通用结论所需条件，再应用该结论 |
+| NOT FORMALIZED | 尚未写成 Lean 定义或定理 |
+| REFUTED | 已找到反例，并给出证明 |
+| ROOT | 由前述引理推出最终遗憾上界，对应 R17 |
+| [望远镜求和](https://en.wikipedia.org/wiki/Telescoping_series) | 指将相邻差值相加，使中间项相消 $(a_1-a_0)+(a_2-a_1)+\cdots+(a_n-a_{n-1})=a_n-a_0.$ |
 
-## DAG
+## 依赖关系
 
-```
-                    R1 ──────────────────┐
-                                         ├──► R12a ──── (δ ≤ C hypothesis) ──┐
-                    R2 ──────────────────┘                                   │
-                     │                                                       │
-                     └──► R5 ──► R6 ─────────────────────────────┐          │
-                                                                 │          │
-                    R8 ──► R9 (Lemma 2) ─────────────────────────┤          │
-                                    ▲                             │          │
-                    R3 ──► R15 ────┘                             │          │
-                                                                  ▼          ▼
-                                         R10  (Eq 36, Eq 37)  ◄──────────────┘
-                                                  │
-                    R11 (Eq 38 assembly) ◄────────┘
-                                                  │
-     R7 (Thm 1) ──────────────────────────────────┤
-                                                  ▼
-     R14 (Eq 39) ─────────────────────────────► R16  ──►  R17 = ROOT (Theorem 2)
-                                                  ▲            ▲
-     R13 (Eq 40) ─────────────────────────────────┘            │
-                                                                │
-     R11 (Eq 38 assembly) ──────────────────────────────────────┘
+下图列出结论间依赖及待补证明、模型。*实线箭头*表示引用已证明结果，*虚线箭头*表示引入假设，*点线*表示已证明结果尚待应用于论文模型。
 
-  Open dependency (carried as a hypothesis, never as an axiom):
-     L34 = Lemma 3 + Lemma 4  ([28])   ──► consumed by R11     ** partly — see below **
-     L5  = Lemma 5            ([45])   ──► consumed by R13 and R16
-
-  Out of scope (no Lean node at all — see R4.md):
-     P1 = Eq (5)–(7)   ─┐
-     R4 = Eq (10),(12),(13) ─┴─► the constrained policy; stands in for by the
-                                 *hypotheses* of `theorem2_rate`, not by a node
-```
-
-`L34`——论文的 Lemma 3 + Lemma 4——是**部分**完成的。这两半必须分开报告，因为承载它的
-三个声明并不都具有相同的分量：
-
-* **Lemma 3 的组合学那一半是一条定理。** `sum_range_blocks` 把时域 `T = m·L` 切成 `m` 个
-  长度为 `L` 的块，`regret_decomp_episodeOf` 提供了 Eq (27) 的望远镜求和，所以 `hdecomp` 是
-  *推出来的*——**在 `theorem3_rate` 中**，它在 `BR := ∑ s ∈ range (m*L), r s` 处调用
-  `theorem2_rate`，并在该实例化处闭合了前提。`Theorem2.lean` 中一般形式的 `theorem2_rate`
-  仍按设计把 `hdecomp` 作为前提：它是在抽象 `BR : ℝ` 之上的陈述。`Decomp.lean` 说得很明确，
-  这一切都不会消除 Lemma 3 的*另一半*——`∫` 在有限指标集上的线性性：*“消失的是「分解成立」
-  这一假设，而不是「有东西可供分解」这一假设。”*
-* **Lemma 4 已被证明，而且是在其最一般的形式下**——但它没有被接线接入，`hper` 仍被假设。
-  `simulation_lemma` 在一个**任意**测度空间上做望远镜求和
-  `∫ ω, ΔJ 0 ω ∂μ = ∑ t ∈ range L, ∫ ω, g t ω ∂μ`，其中 `bellman_step_le` 提供其 Bellman 递推
-  `hrec`；二者都不含任何 bandit 内容。缺的是实例化：`Theorem2.lean` 导入的是
-  `Mathlib, Decomp, Regret, Assembly, Tail, Rate`——**而不是 `Simulation`**——并且 `hper` 仍是
-  `theorem2_rate` 和 `theorem3_rate` 二者的*假设*。`Simulation.lean` 自己的卡片把这一点说得很准确：
-  它声称完成的是“*part of* `hper`”，而不是它的全部。缺失的一步是模型——轨迹律 `P_{θ*}` 与后验
-  采样 `θ^l ∼ Q^l`，即 `DESIGN.md` **GAP-7**——而不是那条引理。
-
-  （`R4` 是一个**不同的**缺席簇——Eq (10),(12),(13) 的受约束策略，列在上文“Out of scope”之下
-  ——DAG 中没有任何东西消耗它。它不是这里的阻塞点；不要把两者混为一谈。）
-
-引用节点出现在上面的 DAG 中，使读者能看到 `hper` 那一半现在仍然**敞开**在哪里。
-
-`L5` 是 DAG 中唯一仍然敞开的**引用**。（`L34` 的 `hper` 那一半作为*假设*是敞开的，但它的数学
-内容已被证明；两者是不同种类的敞开，并且分开计数。）它从来不是 `axiom`：每一条会用到它的 Lean
-陈述都把它作为*显式假设*，因此读者能确切看到假设了什么、在哪里假设。当前状态见 `../DESIGN.md`
-GAP-2——union-bound 路线被证明其上界为 `0.8839970429 = e/(e−1)·e^{−1/(e−1)}`，其 `−log` 为
-`0.123302 < 0.125`，所以 artifact 采用 `c = 11/100` 而非论文的 `1/8`，差异在 `../FIDELITY.md`
-§3.4 中量化。
-
-**`L5` 正在闭合中**（卡片 `L5.md`）。它的子 DAG 如下，其中每一项或已证明、或在推进中：
-
-```
-  TSDPP.gammaMeasure_prod_ratio      (set-level Beta–Gamma ratio law)   CLOSED  BetaGamma.lean
-        │
-        ├──► gamma_ratio_isBetaMeasure  (map-level, via ext_of_Ici)   CLOSED  GammaRatioMap.lean
-        │           │
-  TSDPP.gammaMeasure_lintegral_exp      (Gamma Laplace transform)       CLOSED  GammaMGF.lean
-        │           │
-  TSDPP.gammaMeasure_prod_meas_le       (Markov on the product measure) CLOSED  TSDPP/
-        │           │
-  TSDPP.betaMeasure_Ici_le / _Iio_le    (the two one-sample tails)      CLOSED  TSDPP/
-        │           │
-  TSDPP.unionWitness                    (two-case numeric witness)      CLOSED  TSDPP/
-        │           │
-        ▼           ▼
-  betaMeasure_abs_sub_concentration     (Eq (31) at c₀ = 11/100)        OPEN
+```mermaid
+flowchart TB
+  subgraph proved["PROVED"]
+    R5["R5: belief law"] --> R9["R9: Lemma 2 / Lipschitz bounds"]
+    R9 --> R10["R10: per-round bounds"]
+    R11["R11: regret_le"] --> ROOT["R17: theorem2_rate / theorem2_concrete"]
+    R14["R14: weighted sum bound"] --> EQ39["R17: eq39_collapse"]
+    EQ39 --> ROOT
+    R16["R16: rate arithmetic"] --> ROOT
+    DEC["Decomp: episode decomposition"] --> ROOT3["theorem3_rate"]
+    ROOT --> ROOT3
+  end
+  subgraph premises["EXPLICIT PREMISES"]
+    HC["delta <= C"] -. "premise" .-> R10
+    HP["hper: episode bound / Lemma 4 input"] -. "premise" .-> R11
+    HD["hdecomp: abstract regret decomposition"] -. "premise" .-> ROOT
+    RAD["hdelta, hηl: radius and drift bounds"] -. "premise" .-> EQ39
+    B["hB0, hBle: tail parameter B"] -. "theorem2_concrete" .-> ROOT
+  end
+  subgraph candidates["PROVED, NOT CONNECTED"]
+    SIM["Simulation: generic Lemma 4; model conditions remain"] -.- HP
+    TAIL["R13: geometric tail bound; B supplied separately"] -.- B
+  end
+  subgraph absent["MODELS TO FORMALIZE"]
+    POLICY["P1 / R4: constrained policy"]
+    LAW["GAP-7: trajectory law and posterior sampling"]
+  end
+  subgraph independent["OTHER PROVED CARDS"]
+    R1["R1: chain path bound"] --> R12["R12a: state bound"]
+    R7["R7: posterior conjugacy"]
+    R2["R2: iteration"]
+    R3["R3 / R15: penalty identities"]
+    R8["R8: arm-selection identity"]
+    R6["R6: belief mean"]
+  end
 ```
 
-闭合 `L5` 带来的两个超出它自身的后果：
+## 进展
 
-1. **`TSDPP/` 之外的模块不在任何闭包中。** `TSDPP/BetaGammaChernoff.lean` 与
-   `TSDPP/UnionBound.lean` 位于根模块的导入闭包之内，所以 `lake build TSDPP` 会编译它们，
-   `lean4/scripts/check_axioms.sh` 会审计它们；已用
-   `lake build TSDPP.BetaGammaChernoff TSDPP.UnionBound` 验证（通过，8933 个 job）。
-   同一文件放在 `Scratch/` 下则不行：`lakefile.toml` 恰好声明了一个 `lean_lib`
-   （`name = "TSDPP"`），而 `Scratch/` 没有 olean，所以 `import Scratch.BetaGammaChernoff`
-   根本无法解析，装配文件将无从触及其所消耗的引理。`TSDPP/` 内任何地方都没有声明名冲突；
-   `Scratch/` 下的冗余副本已删除，而不是任其漂移。
-2. **常数会传播。** 论文的 `8` 是*耦合*的——它同时出现在 Lemma 5 的指数与半径
-   `r = √(8 log T/α)` 中。我们的 `c₀` 迫使 `Rate.lean` 中 `K ≥ 1/c₀ = 100/11`，并在
-   `Tail.lean` 中以 `cη`（参数 `c`，论文为 `1/8`，artifact 为 `11/100`）替代 `η/8`。
-   `R13` 和 `R16` 按论文的陈述为真，但它们不是链条所消耗的陈述；两者现均**陈述**于
-   `K₀ = 100/11`（`Tail.lean` 的指数是参数 `c`，`Rate.lean` 的被开方数是 `(100/11)`，
-   `two_mul_sqrt_eight_le` 更名为 `two_mul_sqrt_ratio_le`，最终常数为 `8`，在
-   `2√(100/11) + 1 = 7.030227` 处接近紧）。已验证：`lake build TSDPP` 通过；
-   `lean4/scripts/check_axioms.sh` 审计 `Audit.lean` 中列出的声明，每条或不依赖任何东西、或依赖于
-   `{propext, Classical.choice, Quot.sound}` 的子集。速率 `O(√(L³T log T))` 不变——
-   几何级数对每个 `c > 0` 都收敛。
+### 引理 3 与引理 4
 
-`R4` 不是*敞开*节点，而是一个**缺席**节点——论文的问题陈述从未被形式化，所以 DAG 中没有任何
-东西消耗它。`R4.md` 记录它，以替代否则将会缺失的那个文件。
+
+| 引理 | 状态 | 已证明项 | 待证明项 |
+| --- | --- | --- | --- |
+| 引理 3 | 尚未证毕 | 有限求和按 episode 分块，用于 `theorem3_rate` | 给出概率模型，验证积分条件，完成期望分解 |
+| 引理 4 | 尚未证毕 | 一般求和关系 | 给出轨迹概率分布和后验采样方式，验证引理条件，得到论文所需每 episode 遗憾上界 |
+
+证明与剩余前提见 [Theorem2.lean](../lean4/TSDPP/Theorem2.lean) 和 [Simulation.lean](../lean4/TSDPP/Simulation.lean)。
+
+### 引理 5
+
+| 内容 | 状态 | 已完成项 | 待完成项 |
+| --- | --- | --- | --- |
+| 论文原范围 `0 ≤ r ≤ 1` 内的命题 | 未完成形式化 | 已给出凸序证明思路及非形式化证明 | 将这条证明写成 Lean 证明；见 [L5-CONVEX.md](L5-CONVEX.md) |
+| 当前条件证明路线 | 条件结论已证明 | 已由辅助结果推出概率上界表达式 | 还需证明该表达式不超过目标上界，才能得到无条件结论；见 [L5.md](L5.md) |
+| 在 `r ≥ 1` 上使用的界 | 已反证 | 已给出反例及 Lean 反证 | —；见 [L5-REFUTATION.md](L5-REFUTATION.md) |
+
+下图展示当前条件证明路线；虚线标出尚待证明的最后一个不等式。
+
+```mermaid
+flowchart TB
+  RATIO["BetaGamma: ratio law"] --> MAP["GammaRatioMap: measure map"]
+  MGF["GammaMGF: Laplace transform"] --> CH["BetaGammaChernoff: one-sample bounds"]
+  CH --> U["BetaConcentration: conditional two-sample bound"]
+  MAP --> U
+  SPLIT["UnionBound: set containment"] --> U
+  NUM["Final inequality: unproved"] -. "explicit premise" .-> U
+  REF["Lemma5Refutation: registered unconditional bound is false"]
+```
+
+### 引理 5 的常数如何影响遗憾上界
+
+引理 5 用一个概率上界控制估计误差。这个界中的常数，决定后续计算采用多大的误差范围：概率界越弱，为达到同样的置信程度，就要允许更大的估计误差。
+
+论文在概率界中采用 `1/8`，后续误差范围相应出现 `8`。本项目的条件证明路线采用 `11/100`，因此后续相应改用其倒数 `100/11`。沿这一取值计算，最终遗憾上界的系数为 `8`。这里的“相应”是前后公式共用同一个常数，改动一处，后续计算也须调整。
+
+| 计算环节 | 论文取值 | 本项目取值 |
+| --- | --- | --- |
+| 概率界中的常数 | `1/8` | `11/100`，尚缺完整推导依据 |
+| 误差范围中的对应系数 | `8` | `100/11` |
+| 最终遗憾上界的系数 | 见论文推导 | 本项目证明的条件上界采用 `8` |
+
+尾项计算已证明适用于任意正数 `c`；该结果可用于不同取值。现有条件证明仍需补齐最后一个不等式，才能据此确定概率界的常数。计算细节见 [R13.md](R13.md)、[R16.md](R16.md) 与 [L5.md](L5.md)。
+
+### 尚未写入 Lean 的内容
+
+[R4.md](R4.md) 记录论文的 DPP 指标、policy 与预算约束（Eq (10)、(12)、(13)）；这部分尚未写入 Lean。
+
+## 卡片索引
 
 | 卡片 | 文件 | 状态 |
 |------|------|--------|
@@ -132,10 +122,10 @@ GAP-2——union-bound 路线被证明其上界为 `0.8839970429 = e/(e−1)·e^
 | R10 | `R10.md` | CLOSED |
 | R11 | `R11.md` | CLOSED |
 | R12a| `R12a.md`| CLOSED |
-| L34 | (citation, [28]) | **PARTLY** — L3 的组合学那一半已推出（`regret_decomp_episodeOf`，被 `theorem3_rate` 使用）；L4 *已证明*（`simulation_lemma`、`bellman_step_le`）但**未被实例化**，所以 `hper` 仍是一个假设。阻塞于 GAP-7，而非 R4 |
-| L5  | (citation, [45]) | **NOT CLOSED — 注册形式为 FALSE**（陷阱 P-64，见 `L5.md`）。artifact 陈述的是 `r ≥ 1`；论文陈述的是 `0 ≤ r ≤ 1`。在 `r ≥ 1` 上，界在 `(α,β,r) = (2,200,10)` 处失效：精确值 `8.6066401e−09` 对比注册界 `5.5789e−10`，超出 **15.43×**。所有*已交付*的东西都是真实的，并予保留：条件式 `hnum ⟹ bound`、两条精确的单样本 Chernoff 尾界、union-bound 核心，以及四个 `'`-形式。比值律 **CLOSED**（`BetaGamma.lean`）；映射层面的焊接 **CLOSED**（`GammaRatioMap.lean`）；常数传播至 R13/R16，见 `Tail.lean` 与 `Rate.lean`。旧的上限断言（`0.123302 < 1/8` ⟹ `c₀ = 11/100`）已**被撤回**（P-62 第 1–3 层），`c₀ = 11/100` 现为 **[UNDERIVED]**；至于为什么改在论文的取值范围内重述也修不好论文的*应用*，见 `DESIGN.md` J-11。**由 P-67 扩展**：在 Eq (33) 自身的参数曲线 `r = max{1,√(8 log T/α)}` 上，**论文的** `1/8` 在 6 个抽样元组中有 5 个失效（含 `α=1, T=10⁶`），所以论文的*用法*在论文自己的设定上就是假的，而不只是 artifact 的形式化。**该反证本身现在也是一项交付物**（`CLAUDE.md` 第 1 条允许 "完整证明**或反证**"）：卡片 **`L5-REFUTATION.md`** 载有该证书——见证 `(α,β,r) = (1,100,14)`、初等包含关系 `{X ≥ 15/101} × {Y ≤ 1/101} ⊆ {\|X−Y\| ≥ 14/101}`、可证下界 `LB = (86/101)^100·(1−(100/101)^100)`，超出注册界 **75.79×**（并超出真实概率 **353.48×**）。机器校验形式：**`lean4/TSDPP/Lemma5Refutation.lean` — CLOSED，无条件，已审计。** 两条主定理（`11/100` 处的 `lemma5_as_registered_is_false`、论文自己的 `1/8` 处的 `paper_lemma5_range_ge_one_is_false`）都**不带任何假设**；它们的解析输入是 `lean4/TSDPP/BetaOneCDF.lean`（闭式的 `Beta(1,B)` 尾）。已构建进根闭包，并由 `lean4/scripts/check_axioms.sh` 审计。**范围——引用本条之前请先读 `L5-REFUTATION.md` §0：** 被反驳的是 **`r ≥ 1`** 的陈述；论文自己的 Lemma 5（第 9 页 Eq (31) 将其陈述于 **`0 ≤ r ≤ 1`**）**没有**被反驳（见证位于 `r = 14`，在该范围之外），论文的定理也没有——一个走不通的证明步骤并不会使定理为假 |
-| R13 | `R13.md` | CLOSED（陈述于尾部指数参数 `c > 0`） |
+| L34 | 文献 [28] | 组合分解声明 CLOSED；一般模拟引理声明 CLOSED，但尚未实例化，`hper` 仍为显式假设。见 GAP-7 |
+| L5 | `L5.md`、`L5-REFUTATION.md` | 条件证明声明 CLOSED，仍要求 `hnum`；注册的 `r ≥ 1` 无条件目标已被反证；反证声明 CLOSED，不带额外假设。论文原陈述的 `0 ≤ r ≤ 1` 形式未被反证 |
+| R13 | `R13.md` | 声明 CLOSED：尾项界以 `c > 0` 为参数，不等于证明论文印出的 Eq (40) |
 | R14 | `R14.md` | CLOSED |
 | R15 | `R15.md` | CLOSED |
-| R16 | `R16.md` | CLOSED（陈述于 `K₀ = 100/11`；最终常数 `8`） |
-| R17 | `R17.md` | CLOSED（**ROOT** — Theorem 2 已装配） |
+| R16 | `R16.md` | 声明 CLOSED：采用 `K₀ = 100/11`，最终常数为 `8` |
+| R17 | `R17.md` | 声明 CLOSED；由前述引理推出条件遗憾上界，仍保留各声明列出的显式前提 |
